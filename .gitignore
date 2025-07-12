@@ -18,6 +18,10 @@ out/
 .env.test.local
 .env.production.local
 
+# Environment-specific files (contain passwords)
+*.local
+.env.*
+
 # IDE and editor files
 .vscode/
 .idea/

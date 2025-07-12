@@ -84,7 +84,6 @@ React Frontend → Supabase Edge Functions → Postgres (RLS)
 
 - **GitHub**: https://github.com/SAMMACKIN/Supply-Chain-App
 - **Supabase**: https://supabase.com/dashboard/project/brixbdbunhwlhuwunqxw
-- **Timeline**: Q2-2026 cutover from E2open
 
 ## 📝 Documentation
 
