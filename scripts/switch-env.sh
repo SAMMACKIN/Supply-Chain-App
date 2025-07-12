@@ -103,10 +103,19 @@ show_status() {
     if [[ -f "$PROJECT_ROOT/.env.local" ]]; then
         local current_env=$(grep "ACTIVE_ENV=" "$PROJECT_ROOT/.env.local" | cut -d'=' -f2)
         local current_url=$(grep "SUPABASE_URL=" "$PROJECT_ROOT/.env.local" | head -1 | cut -d'=' -f2)
+        local current_branch=$(git branch --show-current 2>/dev/null || echo "unknown")
         
         echo -e "${BLUE}Current Environment Status:${NC}"
         echo -e "Environment: ${GREEN}${current_env}${NC}"
         echo -e "Supabase URL: ${current_url}"
+        echo -e "Git Branch: ${current_branch}"
+        
+        # Show recommendations
+        if [[ "$current_env" == "development" && "$current_branch" != "develop" ]]; then
+            echo -e "${YELLOW}💡 Consider switching to 'develop' branch for development work${NC}"
+        elif [[ "$current_env" == "production" && "$current_branch" != "main" ]]; then
+            echo -e "${YELLOW}⚠️  Consider switching to 'main' branch for production work${NC}"
+        fi
         echo ""
     else
         echo -e "${RED}❌ No environment configuration found${NC}"
@@ -122,6 +131,7 @@ case "${1:-}" in
         link_supabase "development" "$DEV_REF" "$DEV_PASSWORD" "$DEV_TOKEN"
         echo -e "${GREEN}🚀 Successfully switched to DEVELOPMENT environment${NC}"
         echo -e "Database: ${DEV_URL}"
+        echo -e "${YELLOW}💡 Recommended Git branch: develop${NC}"
         ;;
     
     "production"|"prod")
@@ -134,6 +144,7 @@ case "${1:-}" in
             link_supabase "production" "$PROD_REF" "$PROD_PASSWORD" "$PROD_TOKEN"
             echo -e "${GREEN}🚀 Successfully switched to PRODUCTION environment${NC}"
             echo -e "Database: ${PROD_URL}"
+            echo -e "${YELLOW}💡 Recommended Git branch: main${NC}"
         else
             echo -e "${YELLOW}❌ Production switch cancelled${NC}"
         fi
