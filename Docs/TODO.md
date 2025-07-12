@@ -12,9 +12,22 @@ This TODO tracks the complete implementation of the Custom Supply & Logistics Ap
 
 ---
 
-## 📋 Priority Tasks by Development Drop
+## 📋 Task Management Process
 
-### 🔴 DROP 1 - Call-Off Domain (Foundation)
+**NEW WORKFLOW**: Each task now has a detailed specification in `/docs/tasks/` that requires approval before implementation.
+
+**REORGANIZED**: Titan integration moved to `/docs/backlog/` to focus on core backend + frontend first.
+
+### 🔴 DROP 1 - Call-Off Domain (Foundation) 
+
+**Current Status**: Pending approval for Task 005 (Database Schema Setup)
+
+**Streamlined Task Flow**: 
+- Tasks 005-007: Database foundation
+- Task 008: Quota seed data (replaces Titan import)  
+- Task 009: Call-off CRUD APIs
+- Tasks 010-011: React frontend
+- Tasks 012-014: Testing, auth, DevOps
 
 #### Database Schema Setup
 - [ ] **Create Supabase migrations for core entities**
