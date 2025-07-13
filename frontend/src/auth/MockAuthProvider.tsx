@@ -1,4 +1,5 @@
-import React, { createContext, useState, useEffect, useCallback } from 'react'
+import React, { useState, useEffect, useCallback } from 'react'
+import { AuthContext } from './AuthProvider'
 import type { 
   AuthContextType, 
   AuthUser, 
@@ -7,8 +8,6 @@ import type {
   UserProfile,
   UserRole 
 } from '../types/auth'
-
-export const AuthContext = createContext<AuthContextType | null>(null)
 
 interface MockAuthProviderProps {
   children: React.ReactNode
