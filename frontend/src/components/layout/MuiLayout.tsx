@@ -26,10 +26,10 @@ export function MuiLayout({ children, title }: MuiLayoutProps) {
         <MuiHeader title={title} />
         <Box
           sx={{
-            mt: 8, // Account for AppBar height
+            mt: import.meta.env.VITE_DEV_MODE === 'true' ? 12 : 8, // Account for AppBar + DevBanner height
             pt: 3,
             pb: 3,
-            minHeight: 'calc(100vh - 64px)',
+            minHeight: import.meta.env.VITE_DEV_MODE === 'true' ? 'calc(100vh - 112px)' : 'calc(100vh - 64px)',
           }}
         >
           <Container maxWidth="xl" sx={{ px: 3 }}>

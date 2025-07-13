@@ -4,6 +4,7 @@ import CssBaseline from '@mui/material/CssBaseline'
 import { ThemeProvider } from './contexts/ThemeContext'
 import { QueryProvider } from './providers/QueryProvider'
 import { AuthProvider } from './auth/AuthProvider'
+import { MockAuthProvider } from './auth/MockAuthProvider'
 import { ProtectedRoute } from './auth/ProtectedRoute'
 import { MuiLayout } from './components/layout/MuiLayout'
 import { SimpleDashboard } from './pages/SimpleDashboard'
@@ -16,6 +17,7 @@ import { RegisterForm } from './auth/RegisterForm'
 import { ResetPasswordForm } from './auth/ResetPasswordForm'
 import { ProfileSettings } from './auth/ProfileSettings'
 import { UnauthorizedPage } from './pages/UnauthorizedPage'
+import { DevBanner } from './components/DevBanner'
 
 const TransportOrders = () => (
   <div>
@@ -33,12 +35,16 @@ const theme = createTheme({
 })
 
 function App() {
+  const isDevMode = import.meta.env.VITE_DEV_MODE === 'true'
+  const AuthProviderComponent = isDevMode ? MockAuthProvider : AuthProvider
+
   return (
     <ThemeProvider defaultTheme="dark">
       <MuiThemeProvider theme={theme}>
         <CssBaseline />
+        <DevBanner />
         <Router>
-          <AuthProvider>
+          <AuthProviderComponent>
             <Routes>
               {/* Public routes */}
               <Route path="/login" element={<LoginForm />} />
@@ -85,7 +91,7 @@ function App() {
                 } />
               </Route>
             </Routes>
-          </AuthProvider>
+          </AuthProviderComponent>
         </Router>
       </MuiThemeProvider>
     </ThemeProvider>
