@@ -657,7 +657,11 @@ serve(async (req) => {
           bundle_qty: body.bundle_qty,
           metal_code: body.metal_code,
           destination_party_id: body.destination_party_id || null,
-          expected_ship_date: body.expected_ship_date || null
+          expected_ship_date: body.expected_ship_date || null,
+          delivery_location: body.delivery_location || null,
+          requested_delivery_date: body.requested_delivery_date || null,
+          notes: body.notes || null,
+          status: 'PLANNED'
         })
         .select()
         .single()
@@ -706,8 +710,13 @@ serve(async (req) => {
       // Build update data
       const updateData: any = {}
       if (body.bundle_qty !== undefined) updateData.bundle_qty = body.bundle_qty
+      if (body.metal_code !== undefined) updateData.metal_code = body.metal_code
       if (body.expected_ship_date !== undefined) updateData.expected_ship_date = body.expected_ship_date
       if (body.destination_party_id !== undefined) updateData.destination_party_id = body.destination_party_id
+      if (body.delivery_location !== undefined) updateData.delivery_location = body.delivery_location
+      if (body.requested_delivery_date !== undefined) updateData.requested_delivery_date = body.requested_delivery_date
+      if (body.notes !== undefined) updateData.notes = body.notes
+      if (body.status !== undefined) updateData.status = body.status
       
       const { data, error } = await supabase
         .from('call_off_shipment_line')

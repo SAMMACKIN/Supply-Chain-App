@@ -1,4 +1,3 @@
-import { useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { format } from 'date-fns'
 import {
@@ -8,7 +7,7 @@ import {
   CardContent,
   Chip,
   Button,
-  Grid,
+  Grid2 as Grid,
   Divider,
   List,
   ListItem,
@@ -19,24 +18,16 @@ import {
   DialogTitle,
   DialogContent,
   DialogActions,
-  IconButton,
-  Table,
-  TableBody,
-  TableCell,
-  TableContainer,
-  TableHead,
-  TableRow,
-  Paper
+  IconButton
 } from '@mui/material'
 import {
   Close as CloseIcon,
   Edit as EditIcon,
   LocalShipping as ShippingIcon,
-  AccountBalance as QuotaIcon,
-  Add as AddIcon
+  AccountBalance as QuotaIcon
 } from '@mui/icons-material'
-import { fetchQuotaBalance, fetchShipmentLines } from '../../services/calloff-api'
-import { CreateShipmentLineDialog } from './CreateShipmentLineDialog'
+import { fetchQuotaBalance } from '../../services/calloff-api'
+import { ShipmentLineList } from './ShipmentLineList'
 import type { CallOff } from '../../types/calloff'
 
 interface CallOffDetailViewProps {
@@ -47,7 +38,6 @@ interface CallOffDetailViewProps {
 }
 
 export function CallOffDetailView({ callOff, open, onClose, onEdit }: CallOffDetailViewProps) {
-  const [showCreateShipmentLine, setShowCreateShipmentLine] = useState(false)
 
   // Add error boundaries and null checks
   if (!callOff) {
@@ -63,20 +53,10 @@ export function CallOffDetailView({ callOff, open, onClose, onEdit }: CallOffDet
     staleTime: 30 * 1000, // 30 seconds
   })
 
-  // Query shipment lines for this call-off
-  const { data: shipmentLines, isLoading: shipmentLinesLoading, error: shipmentLinesError } = useQuery({
-    queryKey: ['shipment-lines', callOff.call_off_id],
-    queryFn: () => fetchShipmentLines(callOff.call_off_id),
-    enabled: open && !!callOff.call_off_id,
-    staleTime: 30 * 1000, // 30 seconds
-  })
 
   // Log errors for debugging
   if (balanceError) {
     console.error('Quota balance fetch error:', balanceError)
-  }
-  if (shipmentLinesError) {
-    console.error('Shipment lines fetch error:', shipmentLinesError)
   }
 
   const getStatusColor = (status: string) => {
@@ -142,7 +122,7 @@ export function CallOffDetailView({ callOff, open, onClose, onEdit }: CallOffDet
       <DialogContent sx={{ pt: 2 }}>
         <Grid container spacing={3}>
           {/* Basic Information */}
-          <Grid item xs={12}>
+          <Grid size={12}>
             <Card variant="outlined">
               <CardContent>
                 <Typography variant="h6" gutterBottom sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
@@ -184,7 +164,7 @@ export function CallOffDetailView({ callOff, open, onClose, onEdit }: CallOffDet
                       {callOff.incoterm_code}
                     </Typography>
                   </Grid>
-                  <Grid item xs={12}>
+                  <Grid size={12}>
                     <Typography variant="body2" color="text.secondary">Requested Delivery Date</Typography>
                     <Typography variant="body1" sx={{ fontWeight: 500 }}>
                       {formatDate(callOff.requested_delivery_date)}
@@ -196,7 +176,7 @@ export function CallOffDetailView({ callOff, open, onClose, onEdit }: CallOffDet
           </Grid>
 
           {/* Quota Information */}
-          <Grid item xs={12}>
+          <Grid size={12}>
             <Card variant="outlined">
               <CardContent>
                 <Typography variant="h6" gutterBottom sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
@@ -210,31 +190,31 @@ export function CallOffDetailView({ callOff, open, onClose, onEdit }: CallOffDet
                   </Box>
                 ) : quotaBalance ? (
                   <Grid container spacing={2}>
-                    <Grid item xs={6}>
+                    <Grid size={6}>
                       <Typography variant="body2" color="text.secondary">Quota ID</Typography>
                       <Typography variant="body1" sx={{ fontFamily: 'monospace', fontSize: '0.875rem' }}>
                         {callOff.quota_id.slice(0, 8)}...
                       </Typography>
                     </Grid>
-                    <Grid item xs={6}>
+                    <Grid size={6}>
                       <Typography variant="body2" color="text.secondary">Total Quota</Typography>
                       <Typography variant="body1" sx={{ fontWeight: 500 }}>
                         {quotaBalance.quota_qty_tonnes} tonnes
                       </Typography>
                     </Grid>
-                    <Grid item xs={6}>
+                    <Grid size={6}>
                       <Typography variant="body2" color="text.secondary">Consumed</Typography>
                       <Typography variant="body1" sx={{ fontWeight: 500 }}>
                         {quotaBalance.consumed_bundles} tonnes
                       </Typography>
                     </Grid>
-                    <Grid item xs={6}>
+                    <Grid size={6}>
                       <Typography variant="body2" color="text.secondary">Remaining</Typography>
                       <Typography variant="body1" sx={{ fontWeight: 500 }}>
                         {quotaBalance.remaining_qty_tonnes} tonnes
                       </Typography>
                     </Grid>
-                    <Grid item xs={12}>
+                    <Grid size={12}>
                       <Typography variant="body2" color="text.secondary">Utilization</Typography>
                       <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mt: 0.5 }}>
                         <Typography variant="body1" sx={{ fontWeight: 500 }}>
@@ -264,7 +244,7 @@ export function CallOffDetailView({ callOff, open, onClose, onEdit }: CallOffDet
           </Grid>
 
           {/* Timeline */}
-          <Grid item xs={12}>
+          <Grid size={12}>
             <Card variant="outlined">
               <CardContent>
                 <Typography variant="h6" gutterBottom sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
@@ -316,99 +296,14 @@ export function CallOffDetailView({ callOff, open, onClose, onEdit }: CallOffDet
           </Grid>
 
           {/* Shipment Lines */}
-          <Grid item xs={12}>
+          <Grid size={12}>
             <Card variant="outlined">
               <CardContent>
-                <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
-                  <Typography variant="h6" sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                    <ShippingIcon sx={{ fontSize: 20 }} />
-                    Shipment Lines
-                  </Typography>
-                  {['NEW', 'CONFIRMED'].includes(callOff.status) && (
-                    <Button
-                      variant="outlined"
-                      size="small"
-                      startIcon={<AddIcon />}
-                      onClick={() => setShowCreateShipmentLine(true)}
-                    >
-                      Add Line
-                    </Button>
-                  )}
-                </Box>
-                
-                {shipmentLinesLoading ? (
-                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, py: 2 }}>
-                    <CircularProgress size={20} />
-                    <Typography variant="body2" color="text.secondary">Loading shipment lines...</Typography>
-                  </Box>
-                ) : shipmentLines && shipmentLines.length > 0 ? (
-                  <TableContainer component={Paper} variant="outlined">
-                    <Table size="small">
-                      <TableHead>
-                        <TableRow>
-                          <TableCell>Quantity</TableCell>
-                          <TableCell>Metal</TableCell>
-                          <TableCell>Expected Ship Date</TableCell>
-                          <TableCell>Transport Order</TableCell>
-                          <TableCell>Actions</TableCell>
-                        </TableRow>
-                      </TableHead>
-                      <TableBody>
-                        {shipmentLines.map((line) => (
-                          <TableRow key={line.shipment_line_id}>
-                            <TableCell>
-                              <Typography variant="body2" sx={{ fontWeight: 500 }}>
-                                {line.bundle_qty} tonnes
-                              </Typography>
-                            </TableCell>
-                            <TableCell>
-                              <Chip
-                                label={line.metal_code}
-                                size="small"
-                                color="primary"
-                                variant="outlined"
-                              />
-                            </TableCell>
-                            <TableCell>
-                              <Typography variant="body2" color="text.secondary">
-                                {formatDate(line.expected_ship_date)}
-                              </Typography>
-                            </TableCell>
-                            <TableCell>
-                              <Typography variant="body2" color="text.secondary">
-                                {line.transport_order_id ? line.transport_order_id.slice(0, 8) + '...' : 'Not assigned'}
-                              </Typography>
-                            </TableCell>
-                            <TableCell>
-                              <Box sx={{ display: 'flex', gap: 0.5 }}>
-                                <Button
-                                  variant="outlined"
-                                  size="small"
-                                  onClick={() => console.log('Edit shipment line:', line.shipment_line_id)}
-                                >
-                                  Edit
-                                </Button>
-                                <Button
-                                  variant="outlined"
-                                  size="small"
-                                  color="error"
-                                  onClick={() => console.log('Delete shipment line:', line.shipment_line_id)}
-                                >
-                                  Delete
-                                </Button>
-                              </Box>
-                            </TableCell>
-                          </TableRow>
-                        ))}
-                      </TableBody>
-                    </Table>
-                  </TableContainer>
-                ) : (
-                  <Alert severity="info" sx={{ mt: 1 }}>
-                    No shipment lines created yet. 
-                    This call-off contains {callOff.bundle_qty} tonnes that can be split into multiple shipment lines.
-                  </Alert>
-                )}
+                <Typography variant="h6" gutterBottom sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                  <ShippingIcon sx={{ fontSize: 20 }} />
+                  Shipment Lines
+                </Typography>
+                <ShipmentLineList callOff={callOff} readonly={callOff.status !== 'NEW'} />
               </CardContent>
             </Card>
           </Grid>
@@ -434,12 +329,6 @@ export function CallOffDetailView({ callOff, open, onClose, onEdit }: CallOffDet
         </Button>
       </DialogActions>
 
-      {/* Create Shipment Line Dialog */}
-      <CreateShipmentLineDialog
-        callOff={callOff}
-        open={showCreateShipmentLine}
-        onClose={() => setShowCreateShipmentLine(false)}
-      />
     </Dialog>
   )
 }

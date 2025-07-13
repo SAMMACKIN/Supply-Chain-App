@@ -195,25 +195,8 @@ export async function fulfillCallOff(callOffId: string): Promise<CallOff> {
   return data.data
 }
 
-// Shipment Line API functions
-export interface ShipmentLine {
-  shipment_line_id: string
-  call_off_id: string
-  transport_order_id?: string
-  bundle_qty: number
-  metal_code: string
-  destination_party_id?: string
-  expected_ship_date?: string
-  created_at: string
-  updated_at: string
-}
-
-export interface CreateShipmentLineRequest {
-  bundle_qty: number
-  metal_code: string
-  destination_party_id?: string
-  expected_ship_date?: string
-}
+// Import shipment line types from centralized location
+import type { ShipmentLine, CreateShipmentLineRequest, UpdateShipmentLineRequest } from '../types/shipment-line'
 
 export async function fetchShipmentLines(callOffId: string): Promise<ShipmentLine[]> {
   const { data, error } = await supabase.functions.invoke(`calloff-crud/call-offs/${callOffId}/shipment-lines`, {
@@ -248,7 +231,7 @@ export async function createShipmentLine(callOffId: string, shipmentLineData: Cr
   return data.data
 }
 
-export async function updateShipmentLine(shipmentLineId: string, updates: Partial<CreateShipmentLineRequest>): Promise<ShipmentLine> {
+export async function updateShipmentLine(shipmentLineId: string, updates: UpdateShipmentLineRequest): Promise<ShipmentLine> {
   const { data, error } = await supabase.functions.invoke(`calloff-crud/shipment-lines/${shipmentLineId}`, {
     method: 'PATCH',
     body: updates

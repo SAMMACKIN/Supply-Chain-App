@@ -14,7 +14,7 @@ import {
 } from '@mui/material'
 import { Close as CloseIcon } from '@mui/icons-material'
 import { createShipmentLine } from '../../services/calloff-api'
-import type { CreateShipmentLineRequest } from '../../services/calloff-api'
+import type { CreateShipmentLineRequest } from '../../types/shipment-line'
 import type { CallOff } from '../../types/calloff'
 import { useToast } from '../../hooks/useToast'
 
@@ -38,7 +38,10 @@ export function CreateShipmentLineDialog({ callOff, open, onClose }: CreateShipm
       bundle_qty: 1,
       metal_code: 'CU', // Default to copper
       destination_party_id: '',
-      expected_ship_date: ''
+      expected_ship_date: '',
+      delivery_location: '',
+      requested_delivery_date: '',
+      notes: ''
     }
   })
 
@@ -125,6 +128,38 @@ export function CreateShipmentLineDialog({ callOff, open, onClose }: CreateShipm
                 label="Destination Party ID (Optional)"
                 {...register('destination_party_id')}
                 placeholder="Customer or warehouse ID"
+              />
+            </Grid>
+
+            <Grid item xs={12}>
+              <TextField
+                fullWidth
+                label="Delivery Location (Optional)"
+                {...register('delivery_location')}
+                placeholder="Warehouse or customer location"
+                inputProps={{ maxLength: 100 }}
+              />
+            </Grid>
+
+            <Grid item xs={12}>
+              <TextField
+                fullWidth
+                type="date"
+                label="Requested Delivery Date (Optional)"
+                {...register('requested_delivery_date')}
+                InputLabelProps={{ shrink: true }}
+                inputProps={{ min: new Date().toISOString().split('T')[0] }}
+              />
+            </Grid>
+
+            <Grid item xs={12}>
+              <TextField
+                fullWidth
+                multiline
+                rows={3}
+                label="Notes (Optional)"
+                {...register('notes')}
+                placeholder="Additional delivery instructions or requirements"
               />
             </Grid>
           </Grid>
