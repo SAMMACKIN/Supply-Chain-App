@@ -8,7 +8,8 @@ import {
   DialogActions,
   Button,
   TextField,
-  Grid,
+  Box,
+  Stack,
   IconButton,
   Typography,
   FormControl,
@@ -126,8 +127,8 @@ export function EditShipmentLineDialog({ shipmentLine, callOff, open, onClose }:
 
       <DialogContent sx={{ pt: 2 }}>
         <form onSubmit={handleSubmit(onSubmit)} id="edit-shipment-line-form">
-          <Grid container spacing={3}>
-            <Grid item xs={6}>
+          <Stack spacing={3}>
+            <Box sx={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 3 }}>
               <TextField
                 fullWidth
                 type="number"
@@ -141,9 +142,8 @@ export function EditShipmentLineDialog({ shipmentLine, callOff, open, onClose }:
                 helperText={errors.bundle_qty?.message}
                 inputProps={{ min: 1, max: maxBundleQty }}
               />
-            </Grid>
 
-            <Grid item xs={6}>
+            <Box sx={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 3 }}>
               <TextField
                 fullWidth
                 label="Metal Code"
@@ -152,9 +152,8 @@ export function EditShipmentLineDialog({ shipmentLine, callOff, open, onClose }:
                 helperText={errors.metal_code?.message}
                 placeholder="CU, AL, ZN, etc."
               />
-            </Grid>
 
-            <Grid item xs={6}>
+            <Box sx={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 3 }}>
               <TextField
                 fullWidth
                 type="date"
@@ -163,9 +162,8 @@ export function EditShipmentLineDialog({ shipmentLine, callOff, open, onClose }:
                 InputLabelProps={{ shrink: true }}
                 inputProps={{ min: new Date().toISOString().split('T')[0] }}
               />
-            </Grid>
 
-            <Grid item xs={6}>
+            <Box sx={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 3 }}>
               <TextField
                 fullWidth
                 type="date"
@@ -174,9 +172,7 @@ export function EditShipmentLineDialog({ shipmentLine, callOff, open, onClose }:
                 InputLabelProps={{ shrink: true }}
                 inputProps={{ min: new Date().toISOString().split('T')[0] }}
               />
-            </Grid>
 
-            <Grid item xs={12}>
               <TextField
                 fullWidth
                 label="Delivery Location"
@@ -184,18 +180,14 @@ export function EditShipmentLineDialog({ shipmentLine, callOff, open, onClose }:
                 placeholder="Warehouse or customer location"
                 inputProps={{ maxLength: 100 }}
               />
-            </Grid>
 
-            <Grid item xs={12}>
               <TextField
                 fullWidth
                 label="Destination Party ID"
                 {...register('destination_party_id')}
                 placeholder="Customer or warehouse ID"
               />
-            </Grid>
 
-            <Grid item xs={12}>
               <FormControl fullWidth>
                 <InputLabel>Status</InputLabel>
                 <Select
@@ -211,9 +203,7 @@ export function EditShipmentLineDialog({ shipmentLine, callOff, open, onClose }:
                 </Select>
                 <FormHelperText>Update the shipment line status</FormHelperText>
               </FormControl>
-            </Grid>
 
-            <Grid item xs={12}>
               <TextField
                 fullWidth
                 multiline
@@ -222,8 +212,7 @@ export function EditShipmentLineDialog({ shipmentLine, callOff, open, onClose }:
                 {...register('notes')}
                 placeholder="Additional delivery instructions or requirements"
               />
-            </Grid>
-          </Grid>
+          </Stack>
         </form>
       </DialogContent>
 

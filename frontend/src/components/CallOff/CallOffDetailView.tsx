@@ -7,7 +7,6 @@ import {
   CardContent,
   Chip,
   Button,
-  Grid,
   Divider,
   List,
   ListItem,
@@ -120,9 +119,9 @@ export function CallOffDetailView({ callOff, open, onClose, onEdit }: CallOffDet
       </DialogTitle>
 
       <DialogContent sx={{ pt: 2 }}>
-        <Grid container spacing={3}>
+        <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
           {/* Basic Information */}
-          <Grid item xs={12}>
+          <Box>
             <Card variant="outlined">
               <CardContent>
                 <Typography variant="h6" gutterBottom sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
@@ -140,7 +139,7 @@ export function CallOffDetailView({ callOff, open, onClose, onEdit }: CallOffDet
                         variant="outlined"
                       />
                     </Box>
-                  </Grid>
+                  </Box>
                   <Grid item xs={6}>
                     <Typography variant="body2" color="text.secondary">Direction</Typography>
                     <Box sx={{ mt: 0.5 }}>
@@ -151,32 +150,32 @@ export function CallOffDetailView({ callOff, open, onClose, onEdit }: CallOffDet
                         variant="filled"
                       />
                     </Box>
-                  </Grid>
+                  </Box>
                   <Grid item xs={6}>
                     <Typography variant="body2" color="text.secondary">Bundle Quantity</Typography>
                     <Typography variant="body1" sx={{ fontWeight: 500 }}>
                       {callOff.bundle_qty} tonnes
                     </Typography>
-                  </Grid>
+                  </Box>
                   <Grid item xs={6}>
                     <Typography variant="body2" color="text.secondary">Incoterm</Typography>
                     <Typography variant="body1" sx={{ fontWeight: 500 }}>
                       {callOff.incoterm_code}
                     </Typography>
-                  </Grid>
+                  </Box>
                   <Grid item xs={12}>
                     <Typography variant="body2" color="text.secondary">Requested Delivery Date</Typography>
                     <Typography variant="body1" sx={{ fontWeight: 500 }}>
                       {formatDate(callOff.requested_delivery_date)}
                     </Typography>
-                  </Grid>
+                  </Box>
                 </Grid>
               </CardContent>
             </Card>
-          </Grid>
+          </Box>
 
           {/* Quota Information */}
-          <Grid item xs={12}>
+          <Box>
             <Card variant="outlined">
               <CardContent>
                 <Typography variant="h6" gutterBottom sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
@@ -189,31 +188,31 @@ export function CallOffDetailView({ callOff, open, onClose, onEdit }: CallOffDet
                     <Typography variant="body2" color="text.secondary">Loading quota details...</Typography>
                   </Box>
                 ) : quotaBalance ? (
-                  <Grid container spacing={2}>
-                    <Grid item xs={6}>
+                  <Box sx={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 2 }}>
+                    <Box>
                       <Typography variant="body2" color="text.secondary">Quota ID</Typography>
                       <Typography variant="body1" sx={{ fontFamily: 'monospace', fontSize: '0.875rem' }}>
                         {callOff.quota_id.slice(0, 8)}...
                       </Typography>
-                    </Grid>
-                    <Grid item xs={6}>
+                    </Box>
+                    <Box>
                       <Typography variant="body2" color="text.secondary">Total Quota</Typography>
                       <Typography variant="body1" sx={{ fontWeight: 500 }}>
                         {quotaBalance.quota_qty_tonnes} tonnes
                       </Typography>
-                    </Grid>
-                    <Grid item xs={6}>
+                    </Box>
+                    <Box>
                       <Typography variant="body2" color="text.secondary">Consumed</Typography>
                       <Typography variant="body1" sx={{ fontWeight: 500 }}>
                         {quotaBalance.consumed_bundles} tonnes
                       </Typography>
-                    </Grid>
-                    <Grid item xs={6}>
+                    </Box>
+                    <Box>
                       <Typography variant="body2" color="text.secondary">Remaining</Typography>
                       <Typography variant="body1" sx={{ fontWeight: 500 }}>
                         {quotaBalance.remaining_qty_tonnes} tonnes
                       </Typography>
-                    </Grid>
+                    </Box>
                     <Grid item xs={12}>
                       <Typography variant="body2" color="text.secondary">Utilization</Typography>
                       <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mt: 0.5 }}>
@@ -227,8 +226,8 @@ export function CallOffDetailView({ callOff, open, onClose, onEdit }: CallOffDet
                           variant="outlined"
                         />
                       </Box>
-                    </Grid>
-                  </Grid>
+                    </Box>
+                  </Box>
                 ) : (
                   <Alert severity="warning">
                     Unable to load quota details
@@ -241,10 +240,10 @@ export function CallOffDetailView({ callOff, open, onClose, onEdit }: CallOffDet
                 )}
               </CardContent>
             </Card>
-          </Grid>
+          </Box>
 
           {/* Timeline */}
-          <Grid item xs={12}>
+          <Box>
             <Card variant="outlined">
               <CardContent>
                 <Typography variant="h6" gutterBottom sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
@@ -293,10 +292,10 @@ export function CallOffDetailView({ callOff, open, onClose, onEdit }: CallOffDet
                 </List>
               </CardContent>
             </Card>
-          </Grid>
+          </Box>
 
           {/* Shipment Lines */}
-          <Grid item xs={12}>
+          <Box>
             <Card variant="outlined">
               <CardContent>
                 <Typography variant="h6" gutterBottom sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
@@ -306,8 +305,8 @@ export function CallOffDetailView({ callOff, open, onClose, onEdit }: CallOffDet
                 <ShipmentLineList callOff={callOff} readonly={callOff.status !== 'NEW'} />
               </CardContent>
             </Card>
-          </Grid>
-        </Grid>
+          </Box>
+        </Box>
       </DialogContent>
 
       <Divider />
