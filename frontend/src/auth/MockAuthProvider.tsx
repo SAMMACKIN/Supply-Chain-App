@@ -139,7 +139,7 @@ export function MockAuthProvider({ children }: MockAuthProviderProps) {
     return user.profile.role === role
   }, [user])
 
-  const canAccess = useCallback((resource: string, action: string) => {
+  const canAccess = useCallback((_resource: string, _action: string) => {
     return true // Mock: allow all access in development
   }, [])
 

@@ -1,5 +1,5 @@
-import React, { useState } from 'react'
-import { useNavigate, Link as RouterLink } from 'react-router-dom'
+import { useState } from 'react'
+import { Link as RouterLink } from 'react-router-dom'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
@@ -27,7 +27,7 @@ const resetSchema = z.object({
 type ResetFormData = z.infer<typeof resetSchema>
 
 export function ResetPasswordForm() {
-  const navigate = useNavigate()
+  // const navigate = useNavigate() // TODO: Add navigation after successful reset
   const { resetPassword } = useAuth()
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)

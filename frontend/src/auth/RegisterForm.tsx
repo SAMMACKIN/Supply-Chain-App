@@ -1,5 +1,5 @@
-import React, { useState } from 'react'
-import { useNavigate, Link as RouterLink } from 'react-router-dom'
+import { useState } from 'react'
+import { Link as RouterLink } from 'react-router-dom'
 import { useForm, Controller } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
@@ -33,7 +33,7 @@ import {
   Business as BusinessIcon
 } from '@mui/icons-material'
 import { useAuth } from '../hooks/useAuth'
-import type { RegisterData, UserRole } from '../types/auth'
+import type { UserRole } from '../types/auth'
 import { validatePassword } from '../utils/auth-helpers'
 
 const registerSchema = z.object({
@@ -45,7 +45,7 @@ const registerSchema = z.object({
   display_name: z.string().min(2, 'Display name must be at least 2 characters'),
   business_unit: z.string().min(1, 'Business unit is required'),
   role: z.enum(['OPS', 'TRADE', 'PLANNER'] as const, {
-    errorMap: () => ({ message: 'Please select a role' })
+    message: 'Please select a role'
   })
 }).refine((data) => data.password === data.confirmPassword, {
   message: "Passwords don't match",
@@ -57,7 +57,7 @@ type RegisterFormData = z.infer<typeof registerSchema>
 const steps = ['Account Details', 'Profile Information', 'Review']
 
 export function RegisterForm() {
-  const navigate = useNavigate()
+  // const navigate = useNavigate() // TODO: Add navigation after successful registration
   const { register: registerUser } = useAuth()
   const [showPassword, setShowPassword] = useState(false)
   const [showConfirmPassword, setShowConfirmPassword] = useState(false)
