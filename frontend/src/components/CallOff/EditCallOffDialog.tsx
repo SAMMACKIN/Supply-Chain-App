@@ -11,7 +11,8 @@ import {
   Stack,
   IconButton,
   Typography,
-  Alert
+  Alert,
+  Box
 } from '@mui/material'
 import { Close as CloseIcon } from '@mui/icons-material'
 import { updateCallOff } from '../../services/calloff-api'
@@ -73,12 +74,12 @@ export function EditCallOffDialog({ callOff, open, onClose }: EditCallOffDialogP
   return (
     <Dialog open={open} onClose={handleClose} maxWidth="sm" fullWidth>
       <DialogTitle sx={{ pb: 1 }}>
-        <Typography variant="h6" sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+        <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
           Edit Call-Off
           <IconButton onClick={handleClose} size="small">
             <CloseIcon />
           </IconButton>
-        </Typography>
+        </Box>
         <Typography variant="body2" color="text.secondary">
           {callOff.call_off_number}
         </Typography>

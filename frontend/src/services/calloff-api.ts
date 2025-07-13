@@ -2,6 +2,38 @@ import { supabase } from '../lib/supabase'
 import type { Quota, QuotaBalance, CallOff, CreateCallOffRequest, Counterparty } from '../types/calloff'
 
 export async function fetchCounterparties(): Promise<Counterparty[]> {
+  const isDevMode = import.meta.env.VITE_DEV_MODE === 'true'
+  
+  if (isDevMode) {
+    // Return mock counterparties for development
+    return [
+      {
+        counterparty_id: 'mock-cp-1',
+        company_name: 'Mock Supplier Co',
+        company_code: 'MOCKSUPP',
+        counterparty_type: 'SUPPLIER',
+        country_code: 'US',
+        is_active: true
+      },
+      {
+        counterparty_id: 'mock-cp-2',
+        company_name: 'Mock Customer Inc',
+        company_code: 'MOCKCUST',
+        counterparty_type: 'CUSTOMER',
+        country_code: 'GB',
+        is_active: true
+      },
+      {
+        counterparty_id: 'mock-cp-3',
+        company_name: 'Mock Trading Ltd',
+        company_code: 'MOCKTRADE',
+        counterparty_type: 'BOTH',
+        country_code: 'DE',
+        is_active: true
+      }
+    ]
+  }
+
   const { data, error } = await supabase.functions.invoke('calloff-crud/counterparties', {
     method: 'GET'
   })
@@ -18,6 +50,14 @@ export async function fetchCounterparties(): Promise<Counterparty[]> {
 }
 
 export async function fetchQuotasByCounterparty(counterpartyId: string): Promise<Quota[]> {
+  const isDevMode = import.meta.env.VITE_DEV_MODE === 'true'
+  
+  if (isDevMode) {
+    // Return mock quotas filtered by counterparty
+    const allQuotas = await fetchAvailableQuotas()
+    return allQuotas.filter(q => q.counterparty_id === counterpartyId)
+  }
+
   const { data, error } = await supabase.functions.invoke(`calloff-crud/counterparties/${counterpartyId}/quotas`, {
     method: 'GET'
   })
@@ -34,6 +74,68 @@ export async function fetchQuotasByCounterparty(counterpartyId: string): Promise
 }
 
 export async function fetchAvailableQuotas(): Promise<Quota[]> {
+  const isDevMode = import.meta.env.VITE_DEV_MODE === 'true'
+  
+  if (isDevMode) {
+    // Return mock quotas for development
+    return [
+      {
+        quota_id: 'mock-quota-1',
+        counterparty_id: 'mock-cp-1',
+        direction: 'BUY',
+        period_month: '2025-01',
+        qty_t: 1000,
+        tolerance_pct: 5,
+        metal_code: 'CU',
+        business_unit_id: 'BU001',
+        incoterm_code: 'DAP',
+        created_at: new Date().toISOString(),
+        counterparty: {
+          company_name: 'Mock Supplier Co',
+          company_code: 'MOCKSUPP',
+          counterparty_type: 'SUPPLIER',
+          country_code: 'US'
+        }
+      },
+      {
+        quota_id: 'mock-quota-2',
+        counterparty_id: 'mock-cp-2',
+        direction: 'SELL',
+        period_month: '2025-02',
+        qty_t: 500,
+        tolerance_pct: 10,
+        metal_code: 'AL',
+        business_unit_id: 'BU002',
+        incoterm_code: 'DDP',
+        created_at: new Date().toISOString(),
+        counterparty: {
+          company_name: 'Mock Customer Inc',
+          company_code: 'MOCKCUST',
+          counterparty_type: 'CUSTOMER',
+          country_code: 'GB'
+        }
+      },
+      {
+        quota_id: 'mock-quota-3',
+        counterparty_id: 'mock-cp-3',
+        direction: 'BUY',
+        period_month: '2025-03',
+        qty_t: 750,
+        tolerance_pct: 7.5,
+        metal_code: 'ZN',
+        business_unit_id: 'BU001',
+        incoterm_code: 'EXW',
+        created_at: new Date().toISOString(),
+        counterparty: {
+          company_name: 'Mock Trading Ltd',
+          company_code: 'MOCKTRADE',
+          counterparty_type: 'BOTH',
+          country_code: 'DE'
+        }
+      }
+    ]
+  }
+
   const { data, error } = await supabase.functions.invoke('calloff-crud/quotas', {
     method: 'GET'
   })
@@ -50,7 +152,25 @@ export async function fetchAvailableQuotas(): Promise<Quota[]> {
 }
 
 export async function fetchQuotaBalance(quotaId: string): Promise<QuotaBalance> {
-  // For development: calculate balance directly from database
+  // Check if we're in dev mode
+  const isDevMode = import.meta.env.VITE_DEV_MODE === 'true'
+  
+  if (isDevMode) {
+    // Return mock quota balance data for development
+    return {
+      quota_id: quotaId,
+      quota_qty_tonnes: 1000,
+      consumed_bundles: 250,
+      pending_bundles: 50,
+      remaining_qty_tonnes: 750,
+      tolerance_pct: 5,
+      utilization_pct: 25,
+      tolerance_status: 'WITHIN_LIMITS',
+      call_off_count: 3
+    }
+  }
+
+  // For production: calculate balance directly from database
   const { data: quota, error: quotaError } = await supabase
     .from('quota')
     .select('*')
@@ -108,6 +228,43 @@ export async function createCallOff(callOffData: CreateCallOffRequest): Promise<
 }
 
 export async function fetchCallOffs(): Promise<CallOff[]> {
+  const isDevMode = import.meta.env.VITE_DEV_MODE === 'true'
+  
+  if (isDevMode) {
+    // Return mock call-offs for development
+    return [
+      {
+        call_off_id: 'mock-co-1',
+        call_off_number: 'CO-2025-001',
+        quota_id: 'mock-quota-1',
+        counterparty_id: 'mock-cp-1',
+        direction: 'BUY',
+        incoterm_code: 'DAP',
+        bundle_qty: 25,
+        requested_delivery_date: '2025-02-15',
+        status: 'NEW',
+        created_by: 'mock-user',
+        created_at: new Date().toISOString()
+      },
+      {
+        call_off_id: 'mock-co-2',
+        call_off_number: 'CO-2025-002',
+        quota_id: 'mock-quota-2',
+        counterparty_id: 'mock-cp-2',
+        direction: 'SELL',
+        incoterm_code: 'DDP',
+        bundle_qty: 10,
+        requested_delivery_date: '2025-03-01',
+        fulfillment_location: 'Hamburg Warehouse',
+        delivery_location: 'London Port',
+        status: 'CONFIRMED',
+        created_by: 'mock-user',
+        created_at: new Date().toISOString(),
+        confirmed_at: new Date().toISOString()
+      }
+    ]
+  }
+
   const { data, error } = await supabase.functions.invoke('calloff-crud/call-offs', {
     method: 'GET'
   })
@@ -125,6 +282,31 @@ export async function fetchCallOffs(): Promise<CallOff[]> {
 
 export async function updateCallOff(callOffId: string, updates: Partial<CreateCallOffRequest>): Promise<CallOff> {
   console.log('updateCallOff called with:', { callOffId, updates })
+  
+  // Check if we should use real database or mock data
+  const isDevMode = import.meta.env.VITE_DEV_MODE === 'true'
+  const useRealDatabase = import.meta.env.VITE_USE_REAL_DATABASE === 'true'
+  
+  if (isDevMode && !useRealDatabase) {
+    // Return mock updated call-off for development
+    await new Promise(resolve => setTimeout(resolve, 300))
+    
+    return {
+      call_off_id: callOffId,
+      call_off_number: 'CO-2025-MOCK',
+      quota_id: 'mock-quota-id',
+      bundle_qty: updates.bundle_qty || 10,
+      requested_delivery_date: updates.requested_delivery_date,
+      counterparty_id: 'mock-counterparty-id',
+      direction: 'SELL',
+      incoterm_code: 'DAP',
+      fulfillment_location: updates.fulfillment_location,
+      delivery_location: updates.delivery_location,
+      status: 'NEW',
+      created_by: 'mock-user-id',
+      created_at: new Date().toISOString()
+    } as CallOff
+  }
   
   const { data, error } = await supabase.functions.invoke(`calloff-crud/call-offs/${callOffId}`, {
     method: 'PATCH',
@@ -198,7 +380,38 @@ export async function fulfillCallOff(callOffId: string): Promise<CallOff> {
 // Import shipment line types from centralized location
 import type { ShipmentLine, CreateShipmentLineRequest, UpdateShipmentLineRequest } from '../types/shipment-line'
 
+// In-memory store for mock shipment lines in dev mode
+const mockShipmentLinesStore: Record<string, ShipmentLine[]> = {}
+
 export async function fetchShipmentLines(callOffId: string): Promise<ShipmentLine[]> {
+  // Check if we should use real database or mock data
+  const isDevMode = import.meta.env.VITE_DEV_MODE === 'true'
+  const useRealDatabase = import.meta.env.VITE_USE_REAL_DATABASE === 'true'
+  
+  if (isDevMode && !useRealDatabase) {
+    // Initialize with default mock data if not exists
+    if (!mockShipmentLinesStore[callOffId]) {
+      mockShipmentLinesStore[callOffId] = [
+        {
+          shipment_line_id: '1',
+          call_off_id: callOffId,
+          bundle_qty: 5,
+          metal_code: 'CU',
+          destination_party_id: 'CUST001',
+          expected_ship_date: '2025-08-15',
+          delivery_location: 'Hamburg Port',
+          requested_delivery_date: '2025-08-20',
+          notes: 'Urgent delivery required',
+          status: 'PLANNED',
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString()
+        }
+      ]
+    }
+    
+    return mockShipmentLinesStore[callOffId] || []
+  }
+
   const { data, error } = await supabase.functions.invoke(`calloff-crud/call-offs/${callOffId}/shipment-lines`, {
     method: 'GET'
   })
@@ -215,6 +428,39 @@ export async function fetchShipmentLines(callOffId: string): Promise<ShipmentLin
 }
 
 export async function createShipmentLine(callOffId: string, shipmentLineData: CreateShipmentLineRequest): Promise<ShipmentLine> {
+  // Check if we should use real database or mock data
+  const isDevMode = import.meta.env.VITE_DEV_MODE === 'true'
+  const useRealDatabase = import.meta.env.VITE_USE_REAL_DATABASE === 'true'
+  
+  if (isDevMode && !useRealDatabase) {
+    // Return mock created shipment line for development
+    const newShipmentLine: ShipmentLine = {
+      shipment_line_id: Math.random().toString(36).substr(2, 9),
+      call_off_id: callOffId,
+      bundle_qty: shipmentLineData.bundle_qty,
+      metal_code: shipmentLineData.metal_code,
+      destination_party_id: shipmentLineData.destination_party_id,
+      expected_ship_date: shipmentLineData.expected_ship_date,
+      delivery_location: shipmentLineData.delivery_location,
+      requested_delivery_date: shipmentLineData.requested_delivery_date,
+      notes: shipmentLineData.notes,
+      status: 'PLANNED',
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString()
+    }
+    
+    // Add to mock store
+    if (!mockShipmentLinesStore[callOffId]) {
+      mockShipmentLinesStore[callOffId] = []
+    }
+    mockShipmentLinesStore[callOffId].push(newShipmentLine)
+    
+    // Simulate API delay
+    await new Promise(resolve => setTimeout(resolve, 500))
+    
+    return newShipmentLine
+  }
+
   const { data, error } = await supabase.functions.invoke(`calloff-crud/call-offs/${callOffId}/shipment-lines`, {
     method: 'POST',
     body: shipmentLineData
@@ -232,6 +478,33 @@ export async function createShipmentLine(callOffId: string, shipmentLineData: Cr
 }
 
 export async function updateShipmentLine(shipmentLineId: string, updates: UpdateShipmentLineRequest): Promise<ShipmentLine> {
+  // Check if we should use real database or mock data
+  const isDevMode = import.meta.env.VITE_DEV_MODE === 'true'
+  const useRealDatabase = import.meta.env.VITE_USE_REAL_DATABASE === 'true'
+  
+  if (isDevMode && !useRealDatabase) {
+    // Return mock updated shipment line for development
+    const updatedShipmentLine: ShipmentLine = {
+      shipment_line_id: shipmentLineId,
+      call_off_id: 'mock-call-off-id',
+      bundle_qty: updates.bundle_qty || 1,
+      metal_code: updates.metal_code || 'CU',
+      destination_party_id: updates.destination_party_id,
+      expected_ship_date: updates.expected_ship_date,
+      delivery_location: updates.delivery_location,
+      requested_delivery_date: updates.requested_delivery_date,
+      notes: updates.notes,
+      status: updates.status || 'PLANNED',
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString()
+    }
+    
+    // Simulate API delay
+    await new Promise(resolve => setTimeout(resolve, 300))
+    
+    return updatedShipmentLine
+  }
+
   const { data, error } = await supabase.functions.invoke(`calloff-crud/shipment-lines/${shipmentLineId}`, {
     method: 'PATCH',
     body: updates
@@ -249,6 +522,26 @@ export async function updateShipmentLine(shipmentLineId: string, updates: Update
 }
 
 export async function deleteShipmentLine(shipmentLineId: string): Promise<void> {
+  // Check if we should use real database or mock data
+  const isDevMode = import.meta.env.VITE_DEV_MODE === 'true'
+  const useRealDatabase = import.meta.env.VITE_USE_REAL_DATABASE === 'true'
+  
+  if (isDevMode && !useRealDatabase) {
+    // Remove from mock store
+    for (const callOffId in mockShipmentLinesStore) {
+      const lines = mockShipmentLinesStore[callOffId]
+      const index = lines.findIndex(line => line.shipment_line_id === shipmentLineId)
+      if (index !== -1) {
+        lines.splice(index, 1)
+        break
+      }
+    }
+    
+    // Simulate API delay for delete operation
+    await new Promise(resolve => setTimeout(resolve, 200))
+    return
+  }
+
   const { data, error } = await supabase.functions.invoke(`calloff-crud/shipment-lines/${shipmentLineId}`, {
     method: 'DELETE'
   })

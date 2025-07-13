@@ -169,6 +169,27 @@ export function CallOffDetailView({ callOff, open, onClose, onEdit }: CallOffDet
                       {formatDate(callOff.requested_delivery_date)}
                     </Typography>
                   </Box>
+                  {/* Location fields for SELL direction */}
+                  {callOff.direction === 'SELL' && (
+                    <>
+                      {callOff.fulfillment_location && (
+                        <Box>
+                          <Typography variant="body2" color="text.secondary">Fulfillment Location</Typography>
+                          <Typography variant="body1" sx={{ fontWeight: 500 }}>
+                            {callOff.fulfillment_location}
+                          </Typography>
+                        </Box>
+                      )}
+                      {callOff.delivery_location && (
+                        <Box>
+                          <Typography variant="body2" color="text.secondary">Delivery Location</Typography>
+                          <Typography variant="body1" sx={{ fontWeight: 500 }}>
+                            {callOff.delivery_location}
+                          </Typography>
+                        </Box>
+                      )}
+                    </>
+                  )}
                 </Box>
               </CardContent>
             </Card>

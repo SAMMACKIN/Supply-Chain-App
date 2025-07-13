@@ -92,6 +92,8 @@ jspm_packages/
 # Temporary files
 *.tmp
 *.temp
+vite.log
+create-test-data.js
 
 # Claude files
 .claude/
@@ -99,3 +101,6 @@ jspm_packages/
 # Database
 *.sqlite
 *.db
+
+# Vercel
+.vercel

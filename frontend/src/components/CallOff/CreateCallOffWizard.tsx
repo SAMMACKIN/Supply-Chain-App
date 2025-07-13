@@ -34,7 +34,9 @@ const callOffSchema = z.object({
   counterparty_id: z.string().min(1, 'Please select a counterparty'),
   quota_id: z.string().min(1, 'Please select a quota'),
   bundle_qty: z.number().min(1, 'Bundle quantity must be at least 1'),
-  requested_delivery_date: z.string().optional()
+  requested_delivery_date: z.string().optional(),
+  fulfillment_location: z.string().optional(),
+  delivery_location: z.string().optional()
 })
 
 type CallOffFormData = z.infer<typeof callOffSchema>
@@ -68,7 +70,9 @@ export function CreateCallOffWizard({ open, onClose, initialCounterpartyId, init
       counterparty_id: initialCounterpartyId || initialQuota?.counterparty_id || '',
       quota_id: initialQuota?.quota_id || '',
       bundle_qty: 1,
-      requested_delivery_date: ''
+      requested_delivery_date: '',
+      fulfillment_location: '',
+      delivery_location: ''
     }
   })
 
@@ -145,7 +149,9 @@ export function CreateCallOffWizard({ open, onClose, initialCounterpartyId, init
     const requestData: CreateCallOffRequest = {
       quota_id: data.quota_id,
       bundle_qty: data.bundle_qty,
-      requested_delivery_date: data.requested_delivery_date || undefined
+      requested_delivery_date: data.requested_delivery_date || undefined,
+      fulfillment_location: data.fulfillment_location || undefined,
+      delivery_location: data.delivery_location || undefined
     }
     createMutation.mutate(requestData)
   }
@@ -345,6 +351,44 @@ export function CreateCallOffWizard({ open, onClose, initialCounterpartyId, init
                   />
                 )}
               />
+
+              {/* Location fields for SELL direction */}
+              {selectedQuota?.direction === 'SELL' && (
+                <>
+                  <Controller
+                    name="fulfillment_location"
+                    control={control}
+                    render={({ field }) => (
+                      <TextField
+                        {...field}
+                        label="Fulfillment Location"
+                        placeholder="Warehouse or source location"
+                        error={!!errors.fulfillment_location}
+                        helperText={errors.fulfillment_location?.message || 'Where will the goods be sourced from?'}
+                        fullWidth
+                      />
+                    )}
+                  />
+
+                  {/* Show delivery location only for delivery incoterms */}
+                  {selectedQuota?.incoterm_code && ['DAP', 'DDP', 'DAT', 'DAF'].includes(selectedQuota.incoterm_code) && (
+                    <Controller
+                      name="delivery_location"
+                      control={control}
+                      render={({ field }) => (
+                        <TextField
+                          {...field}
+                          label="Delivery Location"
+                          placeholder="Customer delivery address"
+                          error={!!errors.delivery_location}
+                          helperText={errors.delivery_location?.message || 'Where should the goods be delivered?'}
+                          fullWidth
+                        />
+                      )}
+                    />
+                  )}
+                </>
+              )}
             </Box>
           </Box>
         )

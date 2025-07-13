@@ -21,15 +21,37 @@ serve(async (req) => {
     console.log('Edge Function called with path:', url.pathname)
     console.log('Path parts:', pathParts)
     
-    // Handle quotas endpoint - path will be "/calloff-crud/quotas"
-    if (pathParts.length === 2 && pathParts[0] === 'calloff-crud' && pathParts[1] === 'quotas' && req.method === 'GET') {
-      console.log('Fetching real quotas from database')
-      
-      // Create service role client to bypass RLS
-      const supabase = createClient(
+    // Create Supabase client with user's JWT token from Authorization header
+    const authHeader = req.headers.get('Authorization')
+    console.log('Auth header present:', !!authHeader)
+    
+    let supabase
+    if (authHeader) {
+      // Use user's JWT token for authenticated requests
+      console.log('Using user auth token')
+      supabase = createClient(
+        Deno.env.get('SUPABASE_URL') ?? '',
+        Deno.env.get('SUPABASE_ANON_KEY') ?? '',
+        {
+          global: {
+            headers: {
+              Authorization: authHeader,
+            },
+          },
+        }
+      )
+    } else {
+      // Fallback to service role for unauthenticated requests (like fetching quotas/counterparties)
+      console.log('Using service role for unauthenticated request')
+      supabase = createClient(
         Deno.env.get('SUPABASE_URL') ?? '',
         Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
       )
+    }
+    
+    // Handle quotas endpoint - path will be "/calloff-crud/quotas"
+    if (pathParts.length === 2 && pathParts[0] === 'calloff-crud' && pathParts[1] === 'quotas' && req.method === 'GET') {
+      console.log('Fetching real quotas from database')
       
       // Now that foreign keys exist, try the proper Supabase join
       const { data, error } = await supabase
@@ -86,11 +108,6 @@ serve(async (req) => {
     // Handle call-off creation endpoint - path will be "/calloff-crud/call-offs"
     if (pathParts.length === 2 && pathParts[0] === 'calloff-crud' && pathParts[1] === 'call-offs' && req.method === 'POST') {
       console.log('Creating new call-off')
-      
-      const supabase = createClient(
-        Deno.env.get('SUPABASE_URL') ?? '',
-        Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
-      )
       
       const body = await req.json()
       console.log('Call-off creation request:', body)
@@ -180,11 +197,6 @@ serve(async (req) => {
     if (pathParts.length === 2 && pathParts[0] === 'calloff-crud' && pathParts[1] === 'call-offs' && req.method === 'GET') {
       console.log('Fetching call-offs list')
       
-      const supabase = createClient(
-        Deno.env.get('SUPABASE_URL') ?? '',
-        Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
-      )
-      
       const { data, error } = await supabase
         .from('call_off')
         .select(`
@@ -237,10 +249,6 @@ serve(async (req) => {
       console.log('Updating call-off')
       
       const callOffId = pathParts[2]
-      const supabase = createClient(
-        Deno.env.get('SUPABASE_URL') ?? '',
-        Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
-      )
       
       const body = await req.json()
       console.log('Call-off update request:', body)
@@ -303,11 +311,6 @@ serve(async (req) => {
       
       const callOffId = pathParts[2]
       const action = pathParts[3]
-      
-      const supabase = createClient(
-        Deno.env.get('SUPABASE_URL') ?? '',
-        Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
-      )
       
       if (action === 'confirm') {
         console.log('Confirming call-off:', callOffId)
@@ -541,10 +544,6 @@ serve(async (req) => {
       console.log('Fetching shipment lines for call-off')
       
       const callOffId = pathParts[2]
-      const supabase = createClient(
-        Deno.env.get('SUPABASE_URL') ?? '',
-        Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
-      )
       
       const { data, error } = await supabase
         .from('call_off_shipment_line')
@@ -594,10 +593,6 @@ serve(async (req) => {
       console.log('Creating new shipment line')
       
       const callOffId = pathParts[2]
-      const supabase = createClient(
-        Deno.env.get('SUPABASE_URL') ?? '',
-        Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
-      )
       
       const body = await req.json()
       console.log('Shipment line creation request:', body)
@@ -699,10 +694,6 @@ serve(async (req) => {
       console.log('Updating shipment line')
       
       const shipmentLineId = pathParts[2]
-      const supabase = createClient(
-        Deno.env.get('SUPABASE_URL') ?? '',
-        Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
-      )
       
       const body = await req.json()
       console.log('Shipment line update request:', body)
@@ -769,10 +760,6 @@ serve(async (req) => {
       console.log('Deleting shipment line')
       
       const shipmentLineId = pathParts[2]
-      const supabase = createClient(
-        Deno.env.get('SUPABASE_URL') ?? '',
-        Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
-      )
       
       const { data, error } = await supabase
         .from('call_off_shipment_line')
@@ -1122,11 +1109,6 @@ serve(async (req) => {
     if (pathParts.length === 2 && pathParts[0] === 'calloff-crud' && pathParts[1] === 'counterparties' && req.method === 'GET') {
       console.log('Fetching counterparties for selection')
       
-      const supabase = createClient(
-        Deno.env.get('SUPABASE_URL') ?? '',
-        Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
-      )
-      
       const { data, error } = await supabase
         .from('counterparty')
         .select(`
@@ -1172,10 +1154,6 @@ serve(async (req) => {
       console.log('Fetching quotas for specific counterparty')
       
       const counterpartyId = pathParts[2]
-      const supabase = createClient(
-        Deno.env.get('SUPABASE_URL') ?? '',
-        Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
-      )
       
       const { data, error } = await supabase
         .from('quota')

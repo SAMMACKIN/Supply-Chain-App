@@ -42,6 +42,8 @@ export interface CallOff {
   counterparty_id: string
   direction: 'BUY' | 'SELL'
   incoterm_code: string
+  fulfillment_location?: string  // For SELL: where we source the goods from
+  delivery_location?: string     // For SELL with delivery incoterms: where we deliver to
   status: 'NEW' | 'CONFIRMED' | 'FULFILLED' | 'CANCELLED'
   created_by: string
   created_at: string
@@ -54,6 +56,8 @@ export interface CreateCallOffRequest {
   quota_id: string
   bundle_qty: number
   requested_delivery_date?: string
+  fulfillment_location?: string
+  delivery_location?: string
 }
 
 export interface CreateCallOffResponse {

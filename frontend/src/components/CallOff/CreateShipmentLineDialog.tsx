@@ -70,12 +70,12 @@ export function CreateShipmentLineDialog({ callOff, open, onClose }: CreateShipm
   return (
     <Dialog open={open} onClose={handleClose} maxWidth="sm" fullWidth>
       <DialogTitle sx={{ pb: 1 }}>
-        <Typography variant="h6" sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+        <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
           Create Shipment Line
           <IconButton onClick={handleClose} size="small">
             <CloseIcon />
           </IconButton>
-        </Typography>
+        </Box>
         <Typography variant="body2" color="text.secondary">
           Split call-off {callOff.call_off_number} into shipment lines
         </Typography>
@@ -92,7 +92,8 @@ export function CreateShipmentLineDialog({ callOff, open, onClose }: CreateShipm
                 {...register('bundle_qty', { 
                   required: 'Quantity is required',
                   min: { value: 1, message: 'Minimum 1 tonne' },
-                  max: { value: callOff.bundle_qty, message: `Cannot exceed ${callOff.bundle_qty} tonnes` }
+                  max: { value: callOff.bundle_qty, message: `Cannot exceed ${callOff.bundle_qty} tonnes` },
+                  valueAsNumber: true
                 })}
                 error={!!errors.bundle_qty}
                 helperText={errors.bundle_qty?.message}
