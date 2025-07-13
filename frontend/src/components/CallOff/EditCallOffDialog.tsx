@@ -8,11 +8,11 @@ import {
   DialogActions,
   Button,
   TextField,
+  Grid,
   IconButton,
   Typography,
   Alert
 } from '@mui/material'
-import Grid from '@mui/material/Grid2'
 import { Close as CloseIcon } from '@mui/icons-material'
 import { updateCallOff } from '../../services/calloff-api'
 import type { CallOff, CreateCallOffRequest } from '../../types/calloff'
@@ -87,7 +87,7 @@ export function EditCallOffDialog({ callOff, open, onClose }: EditCallOffDialogP
       <DialogContent sx={{ pt: 2 }}>
         <form onSubmit={handleSubmit(onSubmit)} id="edit-call-off-form">
           <Grid container spacing={3}>
-            <Grid size={12}>
+            <Grid item xs={12}>
               <TextField
                 fullWidth
                 type="number"
@@ -102,7 +102,7 @@ export function EditCallOffDialog({ callOff, open, onClose }: EditCallOffDialogP
               />
             </Grid>
 
-            <Grid size={12}>
+            <Grid item xs={12}>
               <TextField
                 fullWidth
                 type="date"
@@ -113,7 +113,7 @@ export function EditCallOffDialog({ callOff, open, onClose }: EditCallOffDialogP
               />
             </Grid>
 
-            <Grid size={12}>
+            <Grid item xs={12}>
               <Alert severity="info">
                 Call-off is against {callOff.direction} quota. Other details like counterparty and incoterm cannot be changed after creation.
               </Alert>

@@ -7,6 +7,7 @@ import {
   CardContent,
   Chip,
   Button,
+  Grid,
   Divider,
   List,
   ListItem,
@@ -19,7 +20,6 @@ import {
   DialogActions,
   IconButton
 } from '@mui/material'
-import Grid from '@mui/material/Grid2'
 import {
   Close as CloseIcon,
   Edit as EditIcon,
@@ -122,7 +122,7 @@ export function CallOffDetailView({ callOff, open, onClose, onEdit }: CallOffDet
       <DialogContent sx={{ pt: 2 }}>
         <Grid container spacing={3}>
           {/* Basic Information */}
-          <Grid size={12}>
+          <Grid item xs={12}>
             <Card variant="outlined">
               <CardContent>
                 <Typography variant="h6" gutterBottom sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
@@ -164,7 +164,7 @@ export function CallOffDetailView({ callOff, open, onClose, onEdit }: CallOffDet
                       {callOff.incoterm_code}
                     </Typography>
                   </Grid>
-                  <Grid size={12}>
+                  <Grid item xs={12}>
                     <Typography variant="body2" color="text.secondary">Requested Delivery Date</Typography>
                     <Typography variant="body1" sx={{ fontWeight: 500 }}>
                       {formatDate(callOff.requested_delivery_date)}
@@ -176,7 +176,7 @@ export function CallOffDetailView({ callOff, open, onClose, onEdit }: CallOffDet
           </Grid>
 
           {/* Quota Information */}
-          <Grid size={12}>
+          <Grid item xs={12}>
             <Card variant="outlined">
               <CardContent>
                 <Typography variant="h6" gutterBottom sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
@@ -190,31 +190,31 @@ export function CallOffDetailView({ callOff, open, onClose, onEdit }: CallOffDet
                   </Box>
                 ) : quotaBalance ? (
                   <Grid container spacing={2}>
-                    <Grid size={6}>
+                    <Grid item xs={6}>
                       <Typography variant="body2" color="text.secondary">Quota ID</Typography>
                       <Typography variant="body1" sx={{ fontFamily: 'monospace', fontSize: '0.875rem' }}>
                         {callOff.quota_id.slice(0, 8)}...
                       </Typography>
                     </Grid>
-                    <Grid size={6}>
+                    <Grid item xs={6}>
                       <Typography variant="body2" color="text.secondary">Total Quota</Typography>
                       <Typography variant="body1" sx={{ fontWeight: 500 }}>
                         {quotaBalance.quota_qty_tonnes} tonnes
                       </Typography>
                     </Grid>
-                    <Grid size={6}>
+                    <Grid item xs={6}>
                       <Typography variant="body2" color="text.secondary">Consumed</Typography>
                       <Typography variant="body1" sx={{ fontWeight: 500 }}>
                         {quotaBalance.consumed_bundles} tonnes
                       </Typography>
                     </Grid>
-                    <Grid size={6}>
+                    <Grid item xs={6}>
                       <Typography variant="body2" color="text.secondary">Remaining</Typography>
                       <Typography variant="body1" sx={{ fontWeight: 500 }}>
                         {quotaBalance.remaining_qty_tonnes} tonnes
                       </Typography>
                     </Grid>
-                    <Grid size={12}>
+                    <Grid item xs={12}>
                       <Typography variant="body2" color="text.secondary">Utilization</Typography>
                       <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mt: 0.5 }}>
                         <Typography variant="body1" sx={{ fontWeight: 500 }}>
@@ -244,7 +244,7 @@ export function CallOffDetailView({ callOff, open, onClose, onEdit }: CallOffDet
           </Grid>
 
           {/* Timeline */}
-          <Grid size={12}>
+          <Grid item xs={12}>
             <Card variant="outlined">
               <CardContent>
                 <Typography variant="h6" gutterBottom sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
@@ -296,7 +296,7 @@ export function CallOffDetailView({ callOff, open, onClose, onEdit }: CallOffDet
           </Grid>
 
           {/* Shipment Lines */}
-          <Grid size={12}>
+          <Grid item xs={12}>
             <Card variant="outlined">
               <CardContent>
                 <Typography variant="h6" gutterBottom sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>

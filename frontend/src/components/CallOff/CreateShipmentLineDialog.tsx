@@ -7,10 +7,10 @@ import {
   DialogActions,
   Button,
   TextField,
+  Grid,
   IconButton,
   Typography
 } from '@mui/material'
-import Grid from '@mui/material/Grid2'
 import { Close as CloseIcon } from '@mui/icons-material'
 import { createShipmentLine } from '../../services/calloff-api'
 import type { CreateShipmentLineRequest } from '../../types/shipment-line'
@@ -83,7 +83,7 @@ export function CreateShipmentLineDialog({ callOff, open, onClose }: CreateShipm
       <DialogContent sx={{ pt: 2 }}>
         <form onSubmit={handleSubmit(onSubmit)} id="shipment-line-form">
           <Grid container spacing={3}>
-            <Grid size={6}>
+            <Grid item xs={6}>
               <TextField
                 fullWidth
                 type="number"
@@ -99,7 +99,7 @@ export function CreateShipmentLineDialog({ callOff, open, onClose }: CreateShipm
               />
             </Grid>
 
-            <Grid size={6}>
+            <Grid item xs={6}>
               <TextField
                 fullWidth
                 label="Metal Code"
@@ -110,7 +110,7 @@ export function CreateShipmentLineDialog({ callOff, open, onClose }: CreateShipm
               />
             </Grid>
 
-            <Grid size={12}>
+            <Grid item xs={12}>
               <TextField
                 fullWidth
                 type="date"
@@ -121,7 +121,7 @@ export function CreateShipmentLineDialog({ callOff, open, onClose }: CreateShipm
               />
             </Grid>
 
-            <Grid size={12}>
+            <Grid item xs={12}>
               <TextField
                 fullWidth
                 label="Destination Party ID (Optional)"
@@ -130,7 +130,7 @@ export function CreateShipmentLineDialog({ callOff, open, onClose }: CreateShipm
               />
             </Grid>
 
-            <Grid size={12}>
+            <Grid item xs={12}>
               <TextField
                 fullWidth
                 label="Delivery Location (Optional)"
@@ -140,7 +140,7 @@ export function CreateShipmentLineDialog({ callOff, open, onClose }: CreateShipm
               />
             </Grid>
 
-            <Grid size={12}>
+            <Grid item xs={12}>
               <TextField
                 fullWidth
                 type="date"
@@ -151,7 +151,7 @@ export function CreateShipmentLineDialog({ callOff, open, onClose }: CreateShipm
               />
             </Grid>
 
-            <Grid size={12}>
+            <Grid item xs={12}>
               <TextField
                 fullWidth
                 multiline
