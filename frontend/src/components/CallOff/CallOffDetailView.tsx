@@ -128,8 +128,8 @@ export function CallOffDetailView({ callOff, open, onClose, onEdit }: CallOffDet
                   <QuotaIcon sx={{ fontSize: 20 }} />
                   Basic Information
                 </Typography>
-                <Grid container spacing={2}>
-                  <Grid item xs={6}>
+                <Box sx={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 2 }}>
+                  <Box>
                     <Typography variant="body2" color="text.secondary">Status</Typography>
                     <Box sx={{ mt: 0.5 }}>
                       <Chip
@@ -140,7 +140,7 @@ export function CallOffDetailView({ callOff, open, onClose, onEdit }: CallOffDet
                       />
                     </Box>
                   </Box>
-                  <Grid item xs={6}>
+                  <Box>
                     <Typography variant="body2" color="text.secondary">Direction</Typography>
                     <Box sx={{ mt: 0.5 }}>
                       <Chip
@@ -151,25 +151,25 @@ export function CallOffDetailView({ callOff, open, onClose, onEdit }: CallOffDet
                       />
                     </Box>
                   </Box>
-                  <Grid item xs={6}>
+                  <Box>
                     <Typography variant="body2" color="text.secondary">Bundle Quantity</Typography>
                     <Typography variant="body1" sx={{ fontWeight: 500 }}>
                       {callOff.bundle_qty} tonnes
                     </Typography>
                   </Box>
-                  <Grid item xs={6}>
+                  <Box>
                     <Typography variant="body2" color="text.secondary">Incoterm</Typography>
                     <Typography variant="body1" sx={{ fontWeight: 500 }}>
                       {callOff.incoterm_code}
                     </Typography>
                   </Box>
-                  <Grid item xs={12}>
+                  <Box sx={{ gridColumn: '1 / -1' }}>
                     <Typography variant="body2" color="text.secondary">Requested Delivery Date</Typography>
                     <Typography variant="body1" sx={{ fontWeight: 500 }}>
                       {formatDate(callOff.requested_delivery_date)}
                     </Typography>
                   </Box>
-                </Grid>
+                </Box>
               </CardContent>
             </Card>
           </Box>
@@ -213,7 +213,7 @@ export function CallOffDetailView({ callOff, open, onClose, onEdit }: CallOffDet
                         {quotaBalance.remaining_qty_tonnes} tonnes
                       </Typography>
                     </Box>
-                    <Grid item xs={12}>
+                    <Box sx={{ gridColumn: '1 / -1' }}>
                       <Typography variant="body2" color="text.secondary">Utilization</Typography>
                       <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mt: 0.5 }}>
                         <Typography variant="body1" sx={{ fontWeight: 500 }}>
