@@ -1,4 +1,3 @@
-import { useState } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { format } from 'date-fns'
 import {
@@ -95,14 +94,6 @@ export function CallOffList({ onCreateCallOff, onViewCallOff, onEditCallOff }: C
       case 'CANCELLED': return 'error'
       default: return 'default'
     }
-  }
-
-  const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat('en-US', {
-      style: 'currency',
-      currency: 'USD',
-      minimumFractionDigits: 0
-    }).format(amount)
   }
 
   if (isLoading) {

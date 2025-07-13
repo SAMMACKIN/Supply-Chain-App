@@ -8,11 +8,11 @@ import {
   DialogActions,
   Button,
   TextField,
-  Grid2 as Grid,
   IconButton,
   Typography,
   Alert
 } from '@mui/material'
+import Grid from '@mui/material/Grid2'
 import { Close as CloseIcon } from '@mui/icons-material'
 import { updateCallOff } from '../../services/calloff-api'
 import type { CallOff, CreateCallOffRequest } from '../../types/calloff'

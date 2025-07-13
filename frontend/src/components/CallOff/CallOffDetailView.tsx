@@ -7,7 +7,6 @@ import {
   CardContent,
   Chip,
   Button,
-  Grid2 as Grid,
   Divider,
   List,
   ListItem,
@@ -20,6 +19,7 @@ import {
   DialogActions,
   IconButton
 } from '@mui/material'
+import Grid from '@mui/material/Grid2'
 import {
   Close as CloseIcon,
   Edit as EditIcon,

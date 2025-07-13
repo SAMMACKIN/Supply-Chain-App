@@ -8,7 +8,6 @@ import {
   DialogActions,
   Button,
   TextField,
-  Grid,
   IconButton,
   Typography,
   FormControl,
@@ -17,6 +16,7 @@ import {
   MenuItem,
   FormHelperText
 } from '@mui/material'
+import Grid from '@mui/material/Grid2'
 import { Close as CloseIcon } from '@mui/icons-material'
 import { updateShipmentLine } from '../../services/calloff-api'
 import type { ShipmentLine, UpdateShipmentLineRequest, ShipmentLineStatus } from '../../types/shipment-line'
@@ -40,7 +40,6 @@ export function EditShipmentLineDialog({ shipmentLine, callOff, open, onClose }:
     register,
     handleSubmit,
     reset,
-    watch,
     formState: { errors }
   } = useForm<UpdateShipmentLineRequest>({
     defaultValues: {
@@ -128,7 +127,7 @@ export function EditShipmentLineDialog({ shipmentLine, callOff, open, onClose }:
       <DialogContent sx={{ pt: 2 }}>
         <form onSubmit={handleSubmit(onSubmit)} id="edit-shipment-line-form">
           <Grid container spacing={3}>
-            <Grid item xs={6}>
+            <Grid size={6}>
               <TextField
                 fullWidth
                 type="number"
@@ -144,7 +143,7 @@ export function EditShipmentLineDialog({ shipmentLine, callOff, open, onClose }:
               />
             </Grid>
 
-            <Grid item xs={6}>
+            <Grid size={6}>
               <TextField
                 fullWidth
                 label="Metal Code"
@@ -155,7 +154,7 @@ export function EditShipmentLineDialog({ shipmentLine, callOff, open, onClose }:
               />
             </Grid>
 
-            <Grid item xs={6}>
+            <Grid size={6}>
               <TextField
                 fullWidth
                 type="date"
@@ -166,7 +165,7 @@ export function EditShipmentLineDialog({ shipmentLine, callOff, open, onClose }:
               />
             </Grid>
 
-            <Grid item xs={6}>
+            <Grid size={6}>
               <TextField
                 fullWidth
                 type="date"
@@ -177,7 +176,7 @@ export function EditShipmentLineDialog({ shipmentLine, callOff, open, onClose }:
               />
             </Grid>
 
-            <Grid item xs={12}>
+            <Grid size={12}>
               <TextField
                 fullWidth
                 label="Delivery Location"
@@ -187,7 +186,7 @@ export function EditShipmentLineDialog({ shipmentLine, callOff, open, onClose }:
               />
             </Grid>
 
-            <Grid item xs={12}>
+            <Grid size={12}>
               <TextField
                 fullWidth
                 label="Destination Party ID"
@@ -196,7 +195,7 @@ export function EditShipmentLineDialog({ shipmentLine, callOff, open, onClose }:
               />
             </Grid>
 
-            <Grid item xs={12}>
+            <Grid size={12}>
               <FormControl fullWidth>
                 <InputLabel>Status</InputLabel>
                 <Select
@@ -214,7 +213,7 @@ export function EditShipmentLineDialog({ shipmentLine, callOff, open, onClose }:
               </FormControl>
             </Grid>
 
-            <Grid item xs={12}>
+            <Grid size={12}>
               <TextField
                 fullWidth
                 multiline
