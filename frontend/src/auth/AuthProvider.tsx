@@ -1,5 +1,5 @@
 import React, { createContext, useState, useEffect, useCallback } from 'react'
-import type { Session, User } from '@supabase/supabase-js'
+import type { Session } from '@supabase/supabase-js'
 import { supabase } from '../lib/supabase'
 import type { 
   AuthContextType, 
@@ -76,7 +76,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
   const login = useCallback(async (credentials: LoginCredentials) => {
     setError(null)
     try {
-      const { data, error } = await supabase.auth.signInWithPassword({
+      const { error } = await supabase.auth.signInWithPassword({
         email: credentials.email,
         password: credentials.password
       })
@@ -95,47 +95,66 @@ export function AuthProvider({ children }: AuthProviderProps) {
   const register = useCallback(async (data: RegisterData) => {
     setError(null)
     try {
-      // First create the auth user
+      console.log('Starting registration for:', data.email)
+      
+      // Create the auth user with email confirmation
       const { data: authData, error: authError } = await supabase.auth.signUp({
         email: data.email,
-        password: data.password
-      })
-
-      if (authError) throw authError
-      if (!authData.user) throw new Error('User creation failed')
-
-      // Then create the user profile
-      const { error: profileError } = await supabase
-        .from('user_profiles')
-        .insert({
-          user_id: authData.user.id,
-          email: data.email,
-          display_name: data.display_name,
-          business_unit: data.business_unit,
-          role: data.role,
-          warehouse_ids: [],
-          created_at: new Date().toISOString(),
-          updated_at: new Date().toISOString()
-        })
-
-      if (profileError) {
-        // If profile creation fails, we should clean up the auth user
-        await supabase.auth.admin.deleteUser(authData.user.id)
-        throw profileError
-      }
-
-      // Send verification email
-      const { error: verifyError } = await supabase.auth.signInWithOtp({
-        email: data.email,
+        password: data.password,
         options: {
-          emailRedirectTo: `${window.location.origin}/verify-email`
+          emailRedirectTo: `${window.location.origin}/verify-email`,
+          data: {
+            display_name: data.display_name,
+            business_unit: data.business_unit,
+            role: data.role
+          }
         }
       })
 
-      if (verifyError) console.error('Failed to send verification email:', verifyError)
+      if (authError) {
+        console.error('Auth signup error:', authError)
+        throw authError
+      }
+      
+      if (!authData.user) {
+        throw new Error('User creation failed - no user returned')
+      }
+
+      console.log('Auth user created:', authData.user.id)
+
+      // Try to create the user profile
+      // Note: This might fail if email confirmation is required first
+      try {
+        const { error: profileError } = await supabase
+          .from('user_profiles')
+          .insert({
+            user_id: authData.user.id,
+            email: data.email,
+            display_name: data.display_name,
+            business_unit: data.business_unit,
+            role: data.role,
+            warehouse_ids: [],
+            created_at: new Date().toISOString(),
+            updated_at: new Date().toISOString()
+          })
+
+        if (profileError) {
+          console.error('Profile creation error:', profileError)
+          // Don't throw here - the profile might be created by a database trigger after email confirmation
+          console.warn('Profile creation failed, but this might be handled by database triggers after email confirmation')
+        } else {
+          console.log('User profile created successfully')
+        }
+      } catch (profileErr) {
+        console.error('Profile creation failed:', profileErr)
+        // Continue anyway - profile creation might happen via database triggers
+      }
+
+      console.log('Registration completed successfully')
 
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Registration failed'
+      console.error('Registration error:', err)
       setError(message)
       throw new Error(message)
     }

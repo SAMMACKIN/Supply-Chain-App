@@ -9,13 +9,13 @@ import { MuiLayout } from './components/layout/MuiLayout'
 import { SimpleDashboard } from './pages/SimpleDashboard'
 import { MuiCallOffs } from './pages/MuiCallOffs'
 import { MuiQuotas } from './pages/MuiQuotas'
-import { TestSupabase } from './pages/TestSupabase'
 import { DebugDatabase } from './pages/DebugDatabase'
 import { LoginForm } from './auth/LoginForm'
 import { RegisterForm } from './auth/RegisterForm'
 import { ResetPasswordForm } from './auth/ResetPasswordForm'
 import { ProfileSettings } from './auth/ProfileSettings'
 import { UnauthorizedPage } from './pages/UnauthorizedPage'
+import { VerifyEmailPage } from './pages/VerifyEmailPage'
 
 const TransportOrders = () => (
   <div>
@@ -44,6 +44,7 @@ function App() {
               <Route path="/login" element={<LoginForm />} />
               <Route path="/register" element={<RegisterForm />} />
               <Route path="/reset-password" element={<ResetPasswordForm />} />
+              <Route path="/verify-email" element={<VerifyEmailPage />} />
               <Route path="/unauthorized" element={<UnauthorizedPage />} />
               
               {/* Protected routes */}
