@@ -142,8 +142,6 @@ export function EditShipmentLineDialog({ shipmentLine, callOff, open, onClose }:
                 helperText={errors.bundle_qty?.message}
                 inputProps={{ min: 1, max: maxBundleQty }}
               />
-
-            <Box sx={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 3 }}>
               <TextField
                 fullWidth
                 label="Metal Code"
@@ -152,6 +150,7 @@ export function EditShipmentLineDialog({ shipmentLine, callOff, open, onClose }:
                 helperText={errors.metal_code?.message}
                 placeholder="CU, AL, ZN, etc."
               />
+            </Box>
 
             <Box sx={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 3 }}>
               <TextField
@@ -162,8 +161,6 @@ export function EditShipmentLineDialog({ shipmentLine, callOff, open, onClose }:
                 InputLabelProps={{ shrink: true }}
                 inputProps={{ min: new Date().toISOString().split('T')[0] }}
               />
-
-            <Box sx={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 3 }}>
               <TextField
                 fullWidth
                 type="date"
@@ -172,46 +169,47 @@ export function EditShipmentLineDialog({ shipmentLine, callOff, open, onClose }:
                 InputLabelProps={{ shrink: true }}
                 inputProps={{ min: new Date().toISOString().split('T')[0] }}
               />
+            </Box>
 
-              <TextField
-                fullWidth
-                label="Delivery Location"
-                {...register('delivery_location')}
-                placeholder="Warehouse or customer location"
-                inputProps={{ maxLength: 100 }}
-              />
+            <TextField
+              fullWidth
+              label="Delivery Location"
+              {...register('delivery_location')}
+              placeholder="Warehouse or customer location"
+              inputProps={{ maxLength: 100 }}
+            />
 
-              <TextField
-                fullWidth
-                label="Destination Party ID"
-                {...register('destination_party_id')}
-                placeholder="Customer or warehouse ID"
-              />
+            <TextField
+              fullWidth
+              label="Destination Party ID"
+              {...register('destination_party_id')}
+              placeholder="Customer or warehouse ID"
+            />
 
-              <FormControl fullWidth>
-                <InputLabel>Status</InputLabel>
-                <Select
-                  {...register('status')}
-                  defaultValue={shipmentLine.status}
-                  label="Status"
-                >
-                  {statuses.map(status => (
-                    <MenuItem key={status} value={status}>
-                      {status}
-                    </MenuItem>
-                  ))}
-                </Select>
-                <FormHelperText>Update the shipment line status</FormHelperText>
-              </FormControl>
+            <FormControl fullWidth>
+              <InputLabel>Status</InputLabel>
+              <Select
+                {...register('status')}
+                defaultValue={shipmentLine.status}
+                label="Status"
+              >
+                {statuses.map(status => (
+                  <MenuItem key={status} value={status}>
+                    {status}
+                  </MenuItem>
+                ))}
+              </Select>
+              <FormHelperText>Update the shipment line status</FormHelperText>
+            </FormControl>
 
-              <TextField
-                fullWidth
-                multiline
-                rows={3}
-                label="Notes"
-                {...register('notes')}
-                placeholder="Additional delivery instructions or requirements"
-              />
+            <TextField
+              fullWidth
+              multiline
+              rows={3}
+              label="Notes"
+              {...register('notes')}
+              placeholder="Additional delivery instructions or requirements"
+            />
           </Stack>
         </form>
       </DialogContent>
