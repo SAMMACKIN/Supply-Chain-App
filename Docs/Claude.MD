@@ -201,3 +201,33 @@ Event topics (`JSON/Avro`):
 ---
 
 *Prepared July 12 2025 by Accenture Supply‑Chain Technology*
+
+---
+
+## 10  Task Management Process
+
+### 10.1 Task Completion Workflow
+When a task is completed, Claude must:
+1. **Update task status** in the individual task file: `**Status**: 🔴 Pending Approval` → `**Status**: ✅ COMPLETED`
+2. **Move task file** from `Docs/tasks/` to `Docs/tasks/completed tasks/`
+3. **Update todo list** to mark task as completed
+4. **Deploy changes** to development branch
+
+### 10.2 Task File Structure
+```markdown
+# Task XXX: Category - Task Name
+**Status**: ✅ COMPLETED  
+**Priority**: High/Medium/Low  
+**Estimated Effort**: X hours  
+**Prerequisites**: Previous task dependencies
+```
+
+### 10.3 Active Task Tracking
+- Todo list maintained via TodoWrite tool
+- Git commits follow conventional format with Claude Code attribution
+- Working tree should be clean before starting new tasks
+
+---
+
+*Updated July 13 2025 with Task Management Process*
+EOF < /dev/null
