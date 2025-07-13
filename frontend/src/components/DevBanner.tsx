@@ -1,9 +1,8 @@
-import React from 'react'
 import { Alert, Box } from '@mui/material'
 import { Code as CodeIcon } from '@mui/icons-material'
 
 export function DevBanner() {
-  if (import.meta.env.VITE_DEV_MODE !== 'true') {
+  if (import.meta.env.PROD) {
     return null
   }
 
@@ -20,7 +19,7 @@ export function DevBanner() {
           }
         }}
       >
-        🚧 Development Mode - Using Mock Authentication (Docker/Supabase not running)
+        🚧 Development Environment - Connected to Supabase Development Instance
       </Alert>
     </Box>
   )
