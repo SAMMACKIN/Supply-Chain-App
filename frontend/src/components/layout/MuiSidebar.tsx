@@ -23,14 +23,16 @@ import {
   Inventory as InventoryIcon,
   Menu as MenuIcon,
   Close as CloseIcon,
+  Person as PersonIcon,
 } from '@mui/icons-material'
 
 const navigation = [
-  { name: 'Dashboard', href: '/', icon: DashboardIcon, testid: 'nav-dashboard' },
+  { name: 'Dashboard', href: '/dashboard', icon: DashboardIcon, testid: 'nav-dashboard' },
   { name: 'Quotas', href: '/quotas', icon: QuotasIcon, testid: 'nav-quotas' },
   { name: 'Call-Offs', href: '/call-offs', icon: CallOffsIcon, testid: 'nav-call-offs' },
   { name: 'Transport Orders', href: '/transport', icon: TransportIcon, testid: 'nav-transport' },
   { name: 'Inventory', href: '/inventory', icon: InventoryIcon, testid: 'nav-inventory' },
+  { name: 'Profile', href: '/profile', icon: PersonIcon, testid: 'nav-profile' },
 ]
 
 const drawerWidth = 280

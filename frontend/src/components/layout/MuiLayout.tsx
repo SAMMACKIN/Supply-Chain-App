@@ -1,10 +1,11 @@
 import type { ReactNode } from 'react'
 import { Box, Container, useTheme } from '@mui/material'
+import { Outlet } from 'react-router-dom'
 import { MuiSidebar } from './MuiSidebar'
 import { MuiHeader } from './MuiHeader'
 
 interface MuiLayoutProps {
-  children: ReactNode
+  children?: ReactNode
   title?: string
 }
 
@@ -32,7 +33,7 @@ export function MuiLayout({ children, title }: MuiLayoutProps) {
           }}
         >
           <Container maxWidth="xl" sx={{ px: 3 }}>
-            {children}
+            {children || <Outlet />}
           </Container>
         </Box>
       </Box>

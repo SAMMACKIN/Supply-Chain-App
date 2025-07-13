@@ -7,6 +7,56 @@
 // https://on.cypress.io/custom-commands
 // ***********************************************
 
+// Mock authentication for tests
+Cypress.Commands.add('mockAuth', () => {
+  cy.window().then((win) => {
+    // Mock Supabase auth state
+    win.localStorage.setItem('supabase.auth.token', JSON.stringify({
+      currentSession: {
+        access_token: 'mock-token',
+        user: {
+          id: 'test-user-id',
+          email: 'test@example.com',
+          app_metadata: {},
+          user_metadata: {},
+          aud: 'authenticated',
+          created_at: new Date().toISOString()
+        }
+      }
+    }))
+  })
+})
+
+// Custom command to bypass authentication
+Cypress.Commands.add('bypassAuth', () => {
+  cy.intercept('GET', '**/auth/v1/user', {
+    statusCode: 200,
+    body: {
+      id: 'test-user-id',
+      email: 'test@example.com',
+      app_metadata: {},
+      user_metadata: {},
+      aud: 'authenticated',
+      created_at: new Date().toISOString()
+    }
+  })
+  
+  cy.intercept('GET', '**/rest/v1/user_profiles*', {
+    statusCode: 200,
+    body: [{
+      id: 'test-profile-id',
+      user_id: 'test-user-id',
+      email: 'test@example.com',
+      display_name: 'Test User',
+      business_unit: 'Test Unit',
+      role: 'TRADE',
+      warehouse_ids: [],
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString()
+    }]
+  })
+})
+
 // Custom command to navigate and wait for page load
 Cypress.Commands.add('visitAndWait', (url: string) => {
   cy.visit(url)
@@ -69,6 +119,8 @@ Cypress.Commands.add('verifyCallOffInList', (expectedData: {
 declare global {
   namespace Cypress {
     interface Chainable {
+      mockAuth(): Chainable<void>
+      bypassAuth(): Chainable<void>
       visitAndWait(url: string): Chainable<void>
       createCallOff(options: {
         counterparty: string
