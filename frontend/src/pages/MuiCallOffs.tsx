@@ -18,14 +18,12 @@ import {
 import { CreateCallOffWizard } from '../components/CallOff/CreateCallOffWizard'
 import { CallOffList } from '../components/CallOff/CallOffList'
 import { CallOffDetailView } from '../components/CallOff/CallOffDetailView'
-import { EditCallOffDialog } from '../components/CallOff/EditCallOffDialog'
 import type { CallOff } from '../types/calloff'
 
 export function MuiCallOffs() {
   const [showCreateWizard, setShowCreateWizard] = useState(false)
   const [selectedCallOff, setSelectedCallOff] = useState<CallOff | null>(null)
   const [showDetailView, setShowDetailView] = useState(false)
-  const [showEditDialog, setShowEditDialog] = useState(false)
 
   const handleViewCallOff = (callOff: CallOff) => {
     setSelectedCallOff(callOff)
@@ -33,17 +31,14 @@ export function MuiCallOffs() {
   }
 
   const handleEditCallOff = (callOff: CallOff) => {
+    // For now, editing is done within the detail view
+    // In the future, we can implement a dedicated edit dialog
     setSelectedCallOff(callOff)
-    setShowEditDialog(true)
+    setShowDetailView(true)
   }
 
   const handleCloseDetailView = () => {
     setShowDetailView(false)
-    setSelectedCallOff(null)
-  }
-
-  const handleCloseEditDialog = () => {
-    setShowEditDialog(false)
     setSelectedCallOff(null)
   }
 
@@ -103,6 +98,7 @@ export function MuiCallOffs() {
           onClose={handleCloseEditDialog}
         />
       )}
+
     </Box>
   )
 }
