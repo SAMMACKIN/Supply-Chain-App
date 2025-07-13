@@ -16,6 +16,7 @@ import { ResetPasswordForm } from './auth/ResetPasswordForm'
 import { ProfileSettings } from './auth/ProfileSettings'
 import { UnauthorizedPage } from './pages/UnauthorizedPage'
 import { VerifyEmailPage } from './pages/VerifyEmailPage'
+import { DevBanner } from './components/DevBanner'
 
 const TransportOrders = () => (
   <div>
@@ -37,6 +38,7 @@ function App() {
     <ThemeProvider defaultTheme="dark">
       <MuiThemeProvider theme={theme}>
         <CssBaseline />
+        <DevBanner />
         <Router>
           <AuthProvider>
             <Routes>
