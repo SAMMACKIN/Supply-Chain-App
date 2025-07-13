@@ -1,4 +1,4 @@
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { useForm, Controller } from 'react-hook-form'
 import { z } from 'zod'
@@ -43,14 +43,15 @@ interface CreateCallOffWizardProps {
   open: boolean
   onClose: () => void
   initialCounterpartyId?: string // For future email integration
+  initialQuota?: Quota // When creating from quota page
 }
 
 const steps = ['Select Counterparty', 'Choose Quota', 'Call-Off Details']
 
-export function CreateCallOffWizard({ open, onClose, initialCounterpartyId }: CreateCallOffWizardProps) {
-  const [activeStep, setActiveStep] = useState(0)
+export function CreateCallOffWizard({ open, onClose, initialCounterpartyId, initialQuota }: CreateCallOffWizardProps) {
+  const [activeStep, setActiveStep] = useState(initialQuota ? 2 : 0)
   const [selectedCounterparty, setSelectedCounterparty] = useState<Counterparty | null>(null)
-  const [selectedQuota, setSelectedQuota] = useState<Quota | null>(null)
+  const [selectedQuota, setSelectedQuota] = useState<Quota | null>(initialQuota || null)
   const queryClient = useQueryClient()
   const toast = useToast()
 
@@ -64,8 +65,8 @@ export function CreateCallOffWizard({ open, onClose, initialCounterpartyId }: Cr
   } = useForm<CallOffFormData>({
     resolver: zodResolver(callOffSchema),
     defaultValues: {
-      counterparty_id: initialCounterpartyId || '',
-      quota_id: '',
+      counterparty_id: initialCounterpartyId || initialQuota?.counterparty_id || '',
+      quota_id: initialQuota?.quota_id || '',
       bundle_qty: 1,
       requested_delivery_date: ''
     }
@@ -100,10 +101,27 @@ export function CreateCallOffWizard({ open, onClose, initialCounterpartyId }: Cr
     }
   })
 
+  // Handle initial quota setup
+  useEffect(() => {
+    if (initialQuota && open) {
+      setSelectedQuota(initialQuota)
+      setValue('quota_id', initialQuota.quota_id)
+      setValue('counterparty_id', initialQuota.counterparty_id)
+      
+      // Find and set the counterparty
+      const counterparty = counterparties?.find(cp => cp.counterparty_id === initialQuota.counterparty_id)
+      if (counterparty) {
+        setSelectedCounterparty(counterparty)
+      }
+      
+      setActiveStep(2) // Jump to call-off details
+    }
+  }, [initialQuota, open, counterparties, setValue])
+
   const handleClose = () => {
-    setActiveStep(0)
+    setActiveStep(initialQuota ? 2 : 0)
     setSelectedCounterparty(null)
-    setSelectedQuota(null)
+    setSelectedQuota(initialQuota || null)
     reset()
     onClose()
   }

@@ -38,7 +38,7 @@ export function MuiQuotas() {
   const theme = useTheme()
   const [searchText, setSearchText] = useState('')
   const [showCreateWizard, setShowCreateWizard] = useState(false)
-  const [selectedCounterpartyId, setSelectedCounterpartyId] = useState<string | undefined>()
+  const [selectedQuota, setSelectedQuota] = useState<Quota | undefined>()
 
   // Query available quotas from Supabase
   const { data: quotas, isLoading, error, refetch } = useQuery({
@@ -241,7 +241,7 @@ export function MuiQuotas() {
                             size="small"
                             color="primary"
                             onClick={() => {
-                              setSelectedCounterpartyId(quota.counterparty_id)
+                              setSelectedQuota(quota)
                               setShowCreateWizard(true)
                             }}
                           >
@@ -264,9 +264,9 @@ export function MuiQuotas() {
         open={showCreateWizard}
         onClose={() => {
           setShowCreateWizard(false)
-          setSelectedCounterpartyId(undefined)
+          setSelectedQuota(undefined)
         }}
-        initialCounterpartyId={selectedCounterpartyId}
+        initialQuota={selectedQuota}
       />
     </Box>
   )
