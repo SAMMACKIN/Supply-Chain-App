@@ -10,7 +10,7 @@ import { MuiLayout } from './components/layout/MuiLayout'
 import { SimpleDashboard } from './pages/SimpleDashboard'
 import { MuiCallOffs } from './pages/MuiCallOffs'
 import { MuiQuotas } from './pages/MuiQuotas'
-import { DebugDatabase } from './pages/DebugDatabase'
+import { Inventory } from './pages/Inventory'
 import { LoginForm } from './auth/LoginForm'
 import { RegisterForm } from './auth/RegisterForm'
 import { ResetPasswordForm } from './auth/ResetPasswordForm'
@@ -25,8 +25,6 @@ const TransportOrders = () => (
     <p>Transport Order Management - Coming Soon</p>
   </div>
 )
-
-const Inventory = () => <DebugDatabase />
 
 const theme = createTheme({
   palette: {
