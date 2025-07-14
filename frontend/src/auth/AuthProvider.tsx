@@ -163,8 +163,12 @@ export function AuthProvider({ children }: AuthProviderProps) {
   const logout = useCallback(async () => {
     setError(null)
     try {
-      // Clear local storage to prevent session conflicts
-      localStorage.removeItem('supabase.auth.token')
+      // Clear all Supabase related storage
+      const keysToRemove = Object.keys(localStorage).filter(key => 
+        key.startsWith('supabase') || key.includes('auth-token')
+      )
+      keysToRemove.forEach(key => localStorage.removeItem(key))
+      
       const { error } = await supabase.auth.signOut()
       if (error) throw error
       setUser(null)
