@@ -34,9 +34,11 @@ export async function fetchCounterparties(): Promise<Counterparty[]> {
     ]
   }
 
+  console.log('Fetching counterparties from Edge Function...')
   const { data, error } = await supabase.functions.invoke('calloff-crud/counterparties', {
     method: 'GET'
   })
+  console.log('Counterparties response:', { data, error })
 
   if (error) {
     throw new Error(`Failed to fetch counterparties: ${error.message}`)
@@ -75,6 +77,7 @@ export async function fetchQuotasByCounterparty(counterpartyId: string): Promise
 
 export async function fetchAvailableQuotas(): Promise<Quota[]> {
   const isDevMode = import.meta.env.VITE_DEV_MODE === 'true'
+  console.log('Dev mode:', isDevMode)
   
   if (isDevMode) {
     // Return mock quotas for development
@@ -142,9 +145,11 @@ export async function fetchAvailableQuotas(): Promise<Quota[]> {
     ]
   }
 
+  console.log('Fetching quotas from Edge Function...')
   const { data, error } = await supabase.functions.invoke('calloff-crud/quotas', {
     method: 'GET'
   })
+  console.log('Quotas response:', { data, error })
 
   if (error) {
     throw new Error(`Failed to fetch quotas: ${error.message}`)

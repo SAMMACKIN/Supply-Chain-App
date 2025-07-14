@@ -8,10 +8,11 @@ const SUPABASE_ANON_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY || ''
 const cleanUrl = SUPABASE_URL.trim()
 const cleanKey = SUPABASE_ANON_KEY.trim()
 
-// Log for debugging (remove in production)
-console.log('Supabase URL from env:', cleanUrl)
-console.log('Supabase key exists:', !!cleanKey)
-console.log('Supabase key length:', cleanKey?.length)
+// Log minimal info for debugging
+if (import.meta.env.DEV) {
+  console.log('Supabase URL:', cleanUrl)
+  console.log('Supabase configured:', !!cleanKey)
+}
 
 // Validate before creating client
 if (!cleanUrl || !cleanKey) {
