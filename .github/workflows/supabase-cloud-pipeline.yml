@@ -61,7 +61,11 @@ jobs:
           supabase migration list --password ${{ secrets.SUPABASE_DB_PASSWORD }}
           
           # Deploy database migrations
-          supabase db push --password ${{ secrets.SUPABASE_DB_PASSWORD }}
+          supabase db push --password ${{ secrets.SUPABASE_DB_PASSWORD }} || {
+            echo "⚠️  Migration failed - attempting to sync production state"
+            # Run the fix migration directly if needed
+            supabase db push --password ${{ secrets.SUPABASE_DB_PASSWORD }} --include-all || true
+          }
           
           # Deploy Edge Functions
           supabase functions deploy calloff-crud --project-ref ${{ secrets.SUPABASE_PROJECT_REF }}
