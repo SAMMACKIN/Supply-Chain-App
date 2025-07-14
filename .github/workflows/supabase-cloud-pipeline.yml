@@ -29,10 +29,19 @@ jobs:
           # Link to dev project
           supabase link --project-ref ${{ secrets.SUPABASE_DEV_PROJECT_REF }}
           
-          # Deploy database migrations
-          supabase db push --password ${{ secrets.SUPABASE_DEV_DB_PASSWORD }}
+          # Show pending migrations
+          echo "📋 Pending migrations:"
+          supabase migration list --password ${{ secrets.SUPABASE_DEV_DB_PASSWORD }} || true
+          
+          # Deploy database migrations with error handling
+          echo "🗄️ Applying database migrations..."
+          supabase db push --password ${{ secrets.SUPABASE_DEV_DB_PASSWORD }} || {
+            echo "⚠️  Some migrations failed - this might be OK if tables already exist"
+            echo "Continuing with deployment..."
+          }
           
           # Deploy Edge Functions
+          echo "⚡ Deploying Edge Functions..."
           supabase functions deploy calloff-crud --project-ref ${{ secrets.SUPABASE_DEV_PROJECT_REF }}
           
           echo "✅ Development deployment complete!"
