@@ -1,4 +1,4 @@
-import { supabase } from '../lib/supabase'
+import { supabase, supabaseConfig } from '../lib/supabase'
 import type { Quota, QuotaBalance, CallOff, CreateCallOffRequest, Counterparty } from '../types/calloff'
 
 export async function fetchCounterparties(): Promise<Counterparty[]> {
@@ -35,20 +35,31 @@ export async function fetchCounterparties(): Promise<Counterparty[]> {
   }
 
   console.log('Fetching counterparties from Edge Function...')
-  const { data, error } = await supabase.functions.invoke('calloff-crud/counterparties', {
-    method: 'GET'
-  })
-  console.log('Counterparties response:', { data, error })
-
-  if (error) {
-    throw new Error(`Failed to fetch counterparties: ${error.message}`)
+  try {
+    const { data: { user } } = await supabase.auth.getUser()
+    const token = user ? (await supabase.auth.getSession()).data.session?.access_token : null
+    
+    const response = await fetch(`${supabaseConfig.url}/functions/v1/calloff-crud/counterparties`, {
+      method: 'GET',
+      headers: {
+        'Authorization': token ? `Bearer ${token}` : `Bearer ${supabaseConfig.anonKey}`,
+        'apikey': supabaseConfig.anonKey,
+        'Content-Type': 'application/json'
+      }
+    })
+    
+    const data = await response.json()
+    console.log('Counterparties response:', data)
+    
+    if (!response.ok || !data.success) {
+      throw new Error(data.error || 'Failed to fetch counterparties')
+    }
+    
+    return data.data
+  } catch (error) {
+    console.error('Error fetching counterparties:', error)
+    throw error
   }
-
-  if (!data.success) {
-    throw new Error(data.error || 'Failed to fetch counterparties')
-  }
-
-  return data.data
 }
 
 export async function fetchQuotasByCounterparty(counterpartyId: string): Promise<Quota[]> {
@@ -146,20 +157,31 @@ export async function fetchAvailableQuotas(): Promise<Quota[]> {
   }
 
   console.log('Fetching quotas from Edge Function...')
-  const { data, error } = await supabase.functions.invoke('calloff-crud/quotas', {
-    method: 'GET'
-  })
-  console.log('Quotas response:', { data, error })
-
-  if (error) {
-    throw new Error(`Failed to fetch quotas: ${error.message}`)
+  try {
+    const { data: { user } } = await supabase.auth.getUser()
+    const token = user ? (await supabase.auth.getSession()).data.session?.access_token : null
+    
+    const response = await fetch(`${supabaseConfig.url}/functions/v1/calloff-crud/quotas`, {
+      method: 'GET',
+      headers: {
+        'Authorization': token ? `Bearer ${token}` : `Bearer ${supabaseConfig.anonKey}`,
+        'apikey': supabaseConfig.anonKey,
+        'Content-Type': 'application/json'
+      }
+    })
+    
+    const data = await response.json()
+    console.log('Quotas response:', data)
+    
+    if (!response.ok || !data.success) {
+      throw new Error(data.error || 'Failed to fetch quotas')
+    }
+    
+    return data.data
+  } catch (error) {
+    console.error('Error fetching quotas:', error)
+    throw error
   }
-
-  if (!data.success) {
-    throw new Error(data.error || 'Failed to fetch quotas')
-  }
-
-  return data.data
 }
 
 export async function fetchQuotaBalance(quotaId: string): Promise<QuotaBalance> {
