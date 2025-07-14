@@ -32,8 +32,8 @@ serve(async (req) => {
     let supabase
     let authMethod = 'unknown'
     
-    // For quota queries, prefer service role to bypass RLS issues
-    if (pathParts.includes('quotas') || pathParts.includes('counterparties')) {
+    // For data queries, prefer service role to bypass RLS issues
+    if (pathParts.includes('quotas') || pathParts.includes('counterparties') || pathParts.includes('call-offs')) {
       console.log('Using service role for data queries to bypass RLS')
       supabase = createClient(
         Deno.env.get('SUPABASE_URL') ?? '',

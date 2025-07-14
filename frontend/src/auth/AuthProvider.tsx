@@ -22,6 +22,40 @@ export function AuthProvider({ children }: AuthProviderProps) {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
 
+  // Clean up any corrupted session data on initialization
+  const cleanupSessionStorage = useCallback(() => {
+    try {
+      // Check for multiple or corrupted Supabase sessions
+      const allKeys = Object.keys(localStorage)
+      const supabaseKeys = allKeys.filter(key => key.includes('supabase'))
+      
+      console.log('Found Supabase storage keys:', supabaseKeys.length)
+      
+      if (supabaseKeys.length > 3) { // Should typically only have 2-3 keys
+        console.log('Too many Supabase keys detected, cleaning up...')
+        supabaseKeys.forEach(key => {
+          if (key.includes('auth-token') || key.includes('session') || key.includes('refresh')) {
+            localStorage.removeItem(key)
+          }
+        })
+      }
+      
+      // Also clear any corrupted session data
+      const authTokenKey = `sb-${supabase.supabaseUrl.split('//')[1].split('.')[0]}-auth-token`
+      const existingToken = localStorage.getItem(authTokenKey)
+      if (existingToken) {
+        try {
+          JSON.parse(existingToken)
+        } catch {
+          console.log('Corrupted auth token detected, removing...')
+          localStorage.removeItem(authTokenKey)
+        }
+      }
+    } catch (err) {
+      console.error('Error during session cleanup:', err)
+    }
+  }, [])
+
   // Fetch user profile from the database
   const fetchUserProfile = async (userId: string): Promise<UserProfile | null> => {
     try {
@@ -59,10 +93,16 @@ export function AuthProvider({ children }: AuthProviderProps) {
 
   // Initialize auth state
   useEffect(() => {
-    // Get initial session
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      handleSession(session).finally(() => setLoading(false))
-    })
+    // Clean up any corrupted sessions first
+    cleanupSessionStorage()
+    
+    // Small delay to ensure cleanup is complete
+    setTimeout(() => {
+      // Get initial session
+      supabase.auth.getSession().then(({ data: { session } }) => {
+        handleSession(session).finally(() => setLoading(false))
+      })
+    }, 100)
 
     // Listen for auth changes
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (_event, session) => {

@@ -298,19 +298,32 @@ export async function fetchCallOffs(): Promise<CallOff[]> {
     ]
   }
 
-  const { data, error } = await supabase.functions.invoke('calloff-crud/call-offs', {
-    method: 'GET'
-  })
-
-  if (error) {
-    throw new Error(`Failed to fetch call-offs: ${error.message}`)
+  console.log('Fetching call-offs from Edge Function...')
+  try {
+    const { data: sessionData } = await supabase.auth.getSession()
+    const token = sessionData?.session?.access_token
+    
+    const response = await fetch(`${supabaseConfig.url}/functions/v1/calloff-crud/call-offs`, {
+      method: 'GET',
+      headers: {
+        'Authorization': token ? `Bearer ${token}` : `Bearer ${supabaseConfig.anonKey}`,
+        'apikey': supabaseConfig.anonKey,
+        'Content-Type': 'application/json'
+      }
+    })
+    
+    const data = await response.json()
+    console.log('Call-offs response:', data)
+    
+    if (!response.ok || !data.success) {
+      throw new Error(data.error || 'Failed to fetch call-offs')
+    }
+    
+    return data.data
+  } catch (error: any) {
+    console.error('Error fetching call-offs:', error)
+    throw new Error(error.message || 'Failed to fetch call-offs')
   }
-
-  if (!data.success) {
-    throw new Error(data.error || 'Failed to fetch call-offs')
-  }
-
-  return data.data
 }
 
 export async function updateCallOff(callOffId: string, updates: Partial<CreateCallOffRequest>): Promise<CallOff> {
