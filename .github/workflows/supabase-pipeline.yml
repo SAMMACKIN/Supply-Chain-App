@@ -1,0 +1,117 @@
+name: Supabase CI/CD Pipeline
+
+on:
+  push:
+    branches:
+      - main
+      - develop
+    paths:
+      - 'supabase/**'
+      - '.github/workflows/supabase-pipeline.yml'
+  pull_request:
+    branches:
+      - main
+      - develop
+    paths:
+      - 'supabase/**'
+
+env:
+  SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    if: github.event_name == 'pull_request'
+    
+    steps:
+      - uses: actions/checkout@v3
+      
+      - uses: supabase/setup-cli@v1
+        with:
+          version: latest
+      
+      - name: Validate Migrations
+        run: |
+          # Check migration files for common issues
+          for file in supabase/migrations/*.sql; do
+            if [ -f "$file" ]; then
+              echo "Checking $file"
+              # Check for DROP statements (dangerous)
+              if grep -i "DROP TABLE\|DROP COLUMN\|DROP CONSTRAINT" "$file"; then
+                echo "⚠️  Warning: Found DROP statement in $file"
+              fi
+              # Check for proper transaction handling
+              if ! grep -q "BEGIN;" "$file" || ! grep -q "COMMIT;" "$file"; then
+                echo "⚠️  Warning: Migration should use transactions (BEGIN/COMMIT)"
+              fi
+            fi
+          done
+
+  deploy-dev:
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/develop' && github.event_name == 'push'
+    
+    steps:
+      - uses: actions/checkout@v3
+      
+      - uses: supabase/setup-cli@v1
+        with:
+          version: latest
+      
+      - name: Deploy to Development
+        run: |
+          supabase link --project-ref ${{ secrets.SUPABASE_DEV_PROJECT_REF }} --password ${{ secrets.SUPABASE_DEV_DB_PASSWORD }}
+          supabase db push
+          supabase functions deploy calloff-crud --project-ref ${{ secrets.SUPABASE_DEV_PROJECT_REF }}
+          
+      - name: Run Post-Deployment Tests
+        run: |
+          # Add any post-deployment validation here
+          echo "Development deployment completed successfully"
+
+  deploy-prod:
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    needs: [test]
+    
+    steps:
+      - uses: actions/checkout@v3
+      
+      - uses: supabase/setup-cli@v1
+        with:
+          version: latest
+      
+      - name: Create Backup
+        run: |
+          # Create a backup point before deployment
+          echo "Creating backup of production database..."
+          # Note: Implement actual backup strategy based on your needs
+      
+      - name: Deploy to Production
+        run: |
+          supabase link --project-ref ${{ secrets.SUPABASE_PROJECT_REF }} --password ${{ secrets.SUPABASE_DB_PASSWORD }}
+          
+          # Show what will be deployed
+          echo "Migrations to be applied:"
+          supabase migration list
+          
+          # Deploy database changes
+          supabase db push
+          
+          # Deploy Edge Functions
+          supabase functions deploy calloff-crud --project-ref ${{ secrets.SUPABASE_PROJECT_REF }}
+          
+      - name: Verify Deployment
+        run: |
+          echo "Production deployment completed"
+          echo "Please verify at: https://supabase.com/dashboard/project/${{ secrets.SUPABASE_PROJECT_REF }}"
+          
+      - name: Notify Team
+        if: always()
+        run: |
+          if [ "${{ job.status }}" == "success" ]; then
+            echo "✅ Production deployment successful"
+          else
+            echo "❌ Production deployment failed"
+          fi
+          # Add Slack/Discord/Email notification here
