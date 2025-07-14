@@ -4,22 +4,26 @@ import { createClient } from '@supabase/supabase-js'
 const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL || ''
 const SUPABASE_ANON_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY || ''
 
+// Clean up any potential whitespace issues
+const cleanUrl = SUPABASE_URL.trim()
+const cleanKey = SUPABASE_ANON_KEY.trim()
+
 // Log for debugging (remove in production)
-console.log('Supabase URL from env:', SUPABASE_URL)
-console.log('Supabase key exists:', !!SUPABASE_ANON_KEY)
-console.log('Supabase key length:', SUPABASE_ANON_KEY?.length)
+console.log('Supabase URL from env:', cleanUrl)
+console.log('Supabase key exists:', !!cleanKey)
+console.log('Supabase key length:', cleanKey?.length)
 
 // Validate before creating client
-if (!SUPABASE_URL || !SUPABASE_ANON_KEY) {
+if (!cleanUrl || !cleanKey) {
   console.error('Missing Supabase configuration:', {
-    url: SUPABASE_URL,
-    hasKey: !!SUPABASE_ANON_KEY
+    url: cleanUrl,
+    hasKey: !!cleanKey
   })
   throw new Error('Supabase configuration is missing')
 }
 
 // Create client with explicit configuration
-export const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
+export const supabase = createClient(cleanUrl, cleanKey, {
   auth: {
     persistSession: true,
     detectSessionInUrl: true,
@@ -39,6 +43,6 @@ export const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
 
 // Export config for debugging
 export const supabaseConfig = {
-  url: SUPABASE_URL,
-  anonKey: SUPABASE_ANON_KEY,
+  url: cleanUrl,
+  anonKey: cleanKey,
 }
