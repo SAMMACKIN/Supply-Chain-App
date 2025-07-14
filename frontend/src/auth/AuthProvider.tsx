@@ -97,12 +97,11 @@ export function AuthProvider({ children }: AuthProviderProps) {
     try {
       console.log('Starting registration for:', data.email)
       
-      // Create the auth user with email confirmation
+      // Create the auth user - simplified for deployment
       const { data: authData, error: authError } = await supabase.auth.signUp({
         email: data.email,
         password: data.password,
         options: {
-          emailRedirectTo: `${window.location.origin}/verify-email`,
           data: {
             display_name: data.display_name,
             business_unit: data.business_unit,
