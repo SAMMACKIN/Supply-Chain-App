@@ -163,9 +163,13 @@ export function AuthProvider({ children }: AuthProviderProps) {
   const logout = useCallback(async () => {
     setError(null)
     try {
+      // Clear local storage to prevent session conflicts
+      localStorage.removeItem('supabase.auth.token')
       const { error } = await supabase.auth.signOut()
       if (error) throw error
       setUser(null)
+      // Force reload to clear any cached state
+      window.location.href = '/login'
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Logout failed'
       setError(message)
