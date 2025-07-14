@@ -36,8 +36,8 @@ export async function fetchCounterparties(): Promise<Counterparty[]> {
 
   console.log('Fetching counterparties from Edge Function...')
   try {
-    const { data: { user } } = await supabase.auth.getUser()
-    const token = user ? (await supabase.auth.getSession()).data.session?.access_token : null
+    const { data: sessionData } = await supabase.auth.getSession()
+    const token = sessionData?.session?.access_token
     
     const response = await fetch(`${supabaseConfig.url}/functions/v1/calloff-crud/counterparties`, {
       method: 'GET',
@@ -56,9 +56,9 @@ export async function fetchCounterparties(): Promise<Counterparty[]> {
     }
     
     return data.data
-  } catch (error) {
+  } catch (error: any) {
     console.error('Error fetching counterparties:', error)
-    throw error
+    throw new Error(error.message || 'Failed to fetch counterparties')
   }
 }
 
@@ -158,8 +158,8 @@ export async function fetchAvailableQuotas(): Promise<Quota[]> {
 
   console.log('Fetching quotas from Edge Function...')
   try {
-    const { data: { user } } = await supabase.auth.getUser()
-    const token = user ? (await supabase.auth.getSession()).data.session?.access_token : null
+    const { data: sessionData } = await supabase.auth.getSession()
+    const token = sessionData?.session?.access_token
     
     const response = await fetch(`${supabaseConfig.url}/functions/v1/calloff-crud/quotas`, {
       method: 'GET',
@@ -178,9 +178,9 @@ export async function fetchAvailableQuotas(): Promise<Quota[]> {
     }
     
     return data.data
-  } catch (error) {
+  } catch (error: any) {
     console.error('Error fetching quotas:', error)
-    throw error
+    throw new Error(error.message || 'Failed to fetch quotas')
   }
 }
 
