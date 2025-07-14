@@ -60,7 +60,8 @@ serve(async (req) => {
     if (isQuotasPath && req.method === 'GET') {
       console.log('Fetching real quotas from database')
       
-      // Now that foreign keys exist, try the proper Supabase join
+      // Fetch quotas with counterparty join
+      console.log('Attempting to fetch quotas with counterparty data...')
       const { data, error } = await supabase
         .from('quota')
         .select(`
@@ -74,7 +75,8 @@ serve(async (req) => {
           business_unit_id,
           incoterm_code,
           created_at,
-          counterparty:counterparty_id (
+          counterparty!inner (
+            counterparty_id,
             company_name,
             company_code,
             counterparty_type,
@@ -82,6 +84,9 @@ serve(async (req) => {
           )
         `)
         .order('period_month', { ascending: false })
+        .limit(50)
+      
+      console.log('Quota query result:', { data: data?.length, error })
       
       if (error) {
         console.error('Database error:', error)
@@ -96,6 +101,8 @@ serve(async (req) => {
           }
         })
       }
+      
+      console.log('Found quotas:', data?.length || 0)
       
       const response = {
         success: true,
