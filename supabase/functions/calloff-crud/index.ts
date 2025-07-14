@@ -20,6 +20,8 @@ serve(async (req) => {
     
     console.log('Edge Function called with path:', url.pathname)
     console.log('Path parts:', pathParts)
+    console.log('Method:', req.method)
+    console.log('URL:', req.url)
     
     // Create Supabase client with user's JWT token from Authorization header
     const authHeader = req.headers.get('Authorization')
@@ -49,8 +51,13 @@ serve(async (req) => {
       )
     }
     
-    // Handle quotas endpoint - path will be "/calloff-crud/quotas"
-    if (pathParts.length === 2 && pathParts[0] === 'calloff-crud' && pathParts[1] === 'quotas' && req.method === 'GET') {
+    // Handle quotas endpoint - path could be "/quotas" or "/calloff-crud/quotas"
+    const isQuotasPath = (
+      (pathParts.length === 1 && pathParts[0] === 'quotas') ||
+      (pathParts.length === 2 && pathParts[0] === 'calloff-crud' && pathParts[1] === 'quotas')
+    )
+    
+    if (isQuotasPath && req.method === 'GET') {
       console.log('Fetching real quotas from database')
       
       // Now that foreign keys exist, try the proper Supabase join
@@ -105,8 +112,13 @@ serve(async (req) => {
       })
     }
     
-    // Handle call-off creation endpoint - path will be "/calloff-crud/call-offs"
-    if (pathParts.length === 2 && pathParts[0] === 'calloff-crud' && pathParts[1] === 'call-offs' && req.method === 'POST') {
+    // Handle call-off creation endpoint - path could be "/call-offs" or "/calloff-crud/call-offs"
+    const isCallOffsPath = (
+      (pathParts.length === 1 && pathParts[0] === 'call-offs') ||
+      (pathParts.length === 2 && pathParts[0] === 'calloff-crud' && pathParts[1] === 'call-offs')
+    )
+    
+    if (isCallOffsPath && req.method === 'POST') {
       console.log('Creating new call-off')
       
       const body = await req.json()
@@ -193,8 +205,8 @@ serve(async (req) => {
       })
     }
     
-    // Handle call-off list endpoint - path will be "/calloff-crud/call-offs"
-    if (pathParts.length === 2 && pathParts[0] === 'calloff-crud' && pathParts[1] === 'call-offs' && req.method === 'GET') {
+    // Handle call-off list endpoint
+    if (isCallOffsPath && req.method === 'GET') {
       console.log('Fetching call-offs list')
       
       const { data, error } = await supabase
@@ -244,8 +256,13 @@ serve(async (req) => {
       })
     }
     
-    // Handle call-off update endpoint - path will be "/calloff-crud/call-offs/:id"
-    if (pathParts.length === 3 && pathParts[0] === 'calloff-crud' && pathParts[1] === 'call-offs' && req.method === 'PATCH') {
+    // Handle call-off update endpoint - path could be "/call-offs/:id" or "/calloff-crud/call-offs/:id"
+    const isCallOffUpdatePath = (
+      (pathParts.length === 2 && pathParts[0] === 'call-offs') ||
+      (pathParts.length === 3 && pathParts[0] === 'calloff-crud' && pathParts[1] === 'call-offs')
+    )
+    
+    if (isCallOffUpdatePath && req.method === 'PATCH') {
       console.log('Updating call-off')
       
       const callOffId = pathParts[2]
