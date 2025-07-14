@@ -91,10 +91,12 @@ export async function fetchAvailableQuotas(): Promise<Quota[]> {
         incoterm_code: 'DAP',
         created_at: new Date().toISOString(),
         counterparty: {
+          counterparty_id: 'mock-cp-1',
           company_name: 'Mock Supplier Co',
           company_code: 'MOCKSUPP',
           counterparty_type: 'SUPPLIER',
-          country_code: 'US'
+          country_code: 'US',
+          is_active: true
         }
       },
       {
@@ -109,10 +111,12 @@ export async function fetchAvailableQuotas(): Promise<Quota[]> {
         incoterm_code: 'DDP',
         created_at: new Date().toISOString(),
         counterparty: {
+          counterparty_id: 'mock-cp-2',
           company_name: 'Mock Customer Inc',
           company_code: 'MOCKCUST',
           counterparty_type: 'CUSTOMER',
-          country_code: 'GB'
+          country_code: 'GB',
+          is_active: true
         }
       },
       {
@@ -127,10 +131,12 @@ export async function fetchAvailableQuotas(): Promise<Quota[]> {
         incoterm_code: 'EXW',
         created_at: new Date().toISOString(),
         counterparty: {
+          counterparty_id: 'mock-cp-3',
           company_name: 'Mock Trading Ltd',
           company_code: 'MOCKTRADE',
           counterparty_type: 'BOTH',
-          country_code: 'DE'
+          country_code: 'DE',
+          is_active: true
         }
       }
     ]
