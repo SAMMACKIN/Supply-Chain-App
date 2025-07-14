@@ -1,0 +1,73 @@
+name: Supabase Cloud Pipeline (Dev → Prod)
+
+on:
+  push:
+    branches:
+      - main
+      - develop
+    paths:
+      - 'supabase/**'
+      - '.github/workflows/supabase-cloud-pipeline.yml'
+  workflow_dispatch:
+
+env:
+  SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+
+jobs:
+  deploy-to-dev:
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/develop'
+    
+    steps:
+      - uses: actions/checkout@v3
+      
+      - uses: supabase/setup-cli@v1
+        with:
+          version: latest
+      
+      - name: Deploy to Development Supabase
+        run: |
+          echo "🚀 Deploying to Development Environment"
+          
+          # Link to dev project
+          supabase link --project-ref ${{ secrets.SUPABASE_DEV_PROJECT_REF }}
+          
+          # Deploy database migrations
+          supabase db push --password ${{ secrets.SUPABASE_DEV_DB_PASSWORD }}
+          
+          # Deploy Edge Functions
+          supabase functions deploy calloff-crud --project-ref ${{ secrets.SUPABASE_DEV_PROJECT_REF }}
+          
+          echo "✅ Development deployment complete!"
+          echo "Test at: https://pxwtdaqhwzweedflwora.supabase.co"
+
+  deploy-to-prod:
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main'
+    
+    steps:
+      - uses: actions/checkout@v3
+      
+      - uses: supabase/setup-cli@v1
+        with:
+          version: latest
+      
+      - name: Deploy to Production Supabase
+        run: |
+          echo "🚀 Deploying to Production Environment"
+          
+          # Link to production project
+          supabase link --project-ref ${{ secrets.SUPABASE_PROJECT_REF }}
+          
+          # Show what will be deployed
+          echo "📋 Migrations to be applied:"
+          supabase migration list --password ${{ secrets.SUPABASE_DB_PASSWORD }}
+          
+          # Deploy database migrations
+          supabase db push --password ${{ secrets.SUPABASE_DB_PASSWORD }}
+          
+          # Deploy Edge Functions
+          supabase functions deploy calloff-crud --project-ref ${{ secrets.SUPABASE_PROJECT_REF }}
+          
+          echo "✅ Production deployment complete!"
+          echo "Live at: https://brixbdbunhwlhuwunqxw.supabase.co"
