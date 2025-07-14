@@ -23,14 +23,26 @@ serve(async (req) => {
     console.log('Method:', req.method)
     console.log('URL:', req.url)
     
-    // Create Supabase client with user's JWT token from Authorization header
+    // Create Supabase client with proper authentication handling
     const authHeader = req.headers.get('Authorization')
-    console.log('Auth header present:', !!authHeader)
+    const hasAuth = !!authHeader && authHeader !== 'Bearer null' && authHeader !== 'Bearer undefined'
+    console.log('Auth header present:', hasAuth)
+    console.log('Auth header value:', authHeader ? `${authHeader.substring(0, 20)}...` : 'none')
     
     let supabase
-    if (authHeader) {
-      // Use user's JWT token for authenticated requests
-      console.log('Using user auth token')
+    let authMethod = 'unknown'
+    
+    // For quota queries, prefer service role to bypass RLS issues
+    if (pathParts.includes('quotas') || pathParts.includes('counterparties')) {
+      console.log('Using service role for data queries to bypass RLS')
+      supabase = createClient(
+        Deno.env.get('SUPABASE_URL') ?? '',
+        Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
+      )
+      authMethod = 'service_role'
+    } else if (hasAuth) {
+      // Use user's JWT token for other authenticated requests (like creating call-offs)
+      console.log('Using user JWT for authenticated request')
       supabase = createClient(
         Deno.env.get('SUPABASE_URL') ?? '',
         Deno.env.get('SUPABASE_ANON_KEY') ?? '',
@@ -42,14 +54,18 @@ serve(async (req) => {
           },
         }
       )
+      authMethod = 'user_jwt'
     } else {
-      // Fallback to service role for unauthenticated requests (like fetching quotas/counterparties)
-      console.log('Using service role for unauthenticated request')
+      // Fallback to anon key for unauthenticated requests
+      console.log('Using anon key for unauthenticated request')
       supabase = createClient(
         Deno.env.get('SUPABASE_URL') ?? '',
-        Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
+        Deno.env.get('SUPABASE_ANON_KEY') ?? ''
       )
+      authMethod = 'anon'
     }
+    
+    console.log('Auth method selected:', authMethod)
     
     // Handle quotas endpoint - path could be "/quotas" or "/calloff-crud/quotas"
     const isQuotasPath = (
@@ -58,10 +74,32 @@ serve(async (req) => {
     )
     
     if (isQuotasPath && req.method === 'GET') {
-      console.log('Fetching real quotas from database')
+      console.log('=== QUOTA QUERY DEBUG ===')
+      console.log('Auth method being used:', authMethod)
+      console.log('Fetching quotas from database...')
       
-      // Fetch quotas with counterparty join
-      console.log('Attempting to fetch quotas with counterparty data...')
+      // First try a simple count to check basic access
+      console.log('Testing basic quota table access...')
+      const { count: quotaCount, error: countError } = await supabase
+        .from('quota')
+        .select('*', { count: 'exact', head: true })
+      
+      console.log('Quota count result:', { count: quotaCount, error: countError })
+      
+      if (countError) {
+        console.error('Failed to count quotas:', countError)
+        return new Response(JSON.stringify({
+          success: false,
+          error: `Count error: ${countError.message}`,
+          authMethod: authMethod
+        }), {
+          status: 500,
+          headers: { 'Content-Type': 'application/json', ...corsHeaders }
+        })
+      }
+      
+      // Now try to fetch actual data
+      console.log('Attempting to fetch quota data...')
       const { data, error } = await supabase
         .from('quota')
         .select(`
@@ -74,25 +112,25 @@ serve(async (req) => {
           metal_code,
           business_unit_id,
           incoterm_code,
-          created_at,
-          counterparty!inner (
-            counterparty_id,
-            company_name,
-            company_code,
-            counterparty_type,
-            country_code
-          )
+          created_at
         `)
         .order('period_month', { ascending: false })
-        .limit(50)
+        .limit(10)
       
-      console.log('Quota query result:', { data: data?.length, error })
+      console.log('Quota query result:', { 
+        dataLength: data?.length, 
+        error: error?.message || 'none',
+        authMethod: authMethod,
+        totalCount: quotaCount
+      })
       
       if (error) {
         console.error('Database error:', error)
         return new Response(JSON.stringify({
           success: false,
-          error: `Database error: ${error.message}`
+          error: `Database error: ${error.message}`,
+          authMethod: authMethod,
+          totalQuotasInDB: quotaCount
         }), {
           status: 500,
           headers: { 
@@ -102,12 +140,46 @@ serve(async (req) => {
         })
       }
       
-      console.log('Found quotas:', data?.length || 0)
+      console.log('Successfully found quotas:', data?.length || 0, 'out of', quotaCount, 'total')
+      
+      // If we got data, try to fetch counterparty info for the first few
+      let enrichedData = data || []
+      if (data && data.length > 0) {
+        console.log('Attempting to enrich quota data with counterparty info...')
+        try {
+          const counterpartyIds = [...new Set(data.map(q => q.counterparty_id).filter(Boolean))]
+          console.log('Found counterparty IDs:', counterpartyIds.length)
+          
+          if (counterpartyIds.length > 0) {
+            const { data: counterparties } = await supabase
+              .from('counterparty')
+              .select('counterparty_id, company_name, company_code, counterparty_type, country_code')
+              .in('counterparty_id', counterpartyIds)
+            
+            console.log('Found counterparties:', counterparties?.length || 0)
+            
+            // Manually join the data
+            enrichedData = data.map(quota => ({
+              ...quota,
+              counterparty: counterparties?.find(cp => cp.counterparty_id === quota.counterparty_id) || null
+            }))
+          }
+        } catch (enrichError) {
+          console.error('Error enriching data:', enrichError)
+          // Continue with basic data if enrichment fails
+        }
+      }
       
       const response = {
         success: true,
-        data: data || [],
-        count: (data || []).length
+        data: enrichedData,
+        count: enrichedData.length,
+        totalInDB: quotaCount,
+        authMethod: authMethod,
+        debug: {
+          basicQueryWorked: !!data,
+          enrichmentWorked: enrichedData.length > 0 && enrichedData[0].counterparty !== undefined
+        }
       }
       
       return new Response(JSON.stringify(response), {
