@@ -203,43 +203,77 @@ export async function fetchQuotaBalance(quotaId: string): Promise<QuotaBalance> 
     }
   }
 
-  // For production: calculate balance directly from database
-  const { data: quota, error: quotaError } = await supabase
-    .from('quota')
-    .select('*')
-    .eq('quota_id', quotaId)
-    .single()
+  console.log('Fetching quota balance for:', quotaId)
+  
+  try {
+    const { data: sessionData } = await supabase.auth.getSession()
+    const token = sessionData?.session?.access_token
+    
+    const response = await fetch(`${supabaseConfig.url}/functions/v1/calloff-crud/quotas/${quotaId}/balance`, {
+      method: 'GET',
+      headers: {
+        'Authorization': token ? `Bearer ${token}` : `Bearer ${supabaseConfig.anonKey}`,
+        'apikey': supabaseConfig.anonKey,
+        'Content-Type': 'application/json'
+      }
+    })
+    
+    const data = await response.json()
+    console.log('Quota balance response:', data)
+    
+    if (!response.ok || !data.success) {
+      throw new Error(data.error || 'Failed to fetch quota balance')
+    }
+    
+    return data.data
+  } catch (error: any) {
+    console.error('Error fetching quota balance:', error)
+    
+    // Fallback: calculate locally if Edge Function fails
+    try {
+      const { data: quota, error: quotaError } = await supabase
+        .from('quota')
+        .select('*')
+        .eq('quota_id', quotaId)
+        .single()
 
-  if (quotaError || !quota) {
-    throw new Error(`Failed to fetch quota: ${quotaError?.message || 'Quota not found'}`)
-  }
+      if (quotaError || !quota) {
+        throw new Error(`Failed to fetch quota: ${quotaError?.message || 'Quota not found'}`)
+      }
 
-  // Get total consumed from call-offs
-  const { data: callOffs, error: callOffError } = await supabase
-    .from('call_off')
-    .select('bundle_qty')
-    .eq('quota_id', quotaId)
-    .in('status', ['CONFIRMED', 'FULFILLED'])
+      // Get total consumed from call-offs
+      const { data: callOffs, error: callOffError } = await supabase
+        .from('call_off')
+        .select('bundle_qty, status')
+        .eq('quota_id', quotaId)
 
-  if (callOffError) {
-    throw new Error(`Failed to fetch call-offs: ${callOffError.message}`)
-  }
+      if (callOffError) {
+        throw new Error(`Failed to fetch call-offs: ${callOffError.message}`)
+      }
 
-  const consumedBundles = callOffs?.reduce((sum, co) => sum + co.bundle_qty, 0) || 0
-  const remainingQty = quota.qty_t - consumedBundles
-  const utilizationPct = (consumedBundles / quota.qty_t) * 100
+      const consumedBundles = callOffs?.filter(co => ['CONFIRMED', 'FULFILLED'].includes(co.status))
+        .reduce((sum, co) => sum + co.bundle_qty, 0) || 0
+      const pendingBundles = callOffs?.filter(co => co.status === 'NEW')
+        .reduce((sum, co) => sum + co.bundle_qty, 0) || 0
+      const remainingQty = quota.qty_t - consumedBundles - pendingBundles
+      const utilizationPct = (consumedBundles / quota.qty_t) * 100
 
-  return {
-    quota_id: quotaId,
-    quota_qty_tonnes: quota.qty_t,
-    consumed_bundles: consumedBundles,
-    pending_bundles: 0, // Could calculate from pending call-offs
-    remaining_qty_tonnes: remainingQty,
-    tolerance_pct: quota.tolerance_pct,
-    utilization_pct: utilizationPct,
-    tolerance_status: utilizationPct > (100 + quota.tolerance_pct) ? 'OVER_TOLERANCE' : 
-                     utilizationPct > 100 ? 'OVER_QUOTA' : 'WITHIN_LIMITS',
-    call_off_count: callOffs?.length || 0
+      return {
+        quota_id: quotaId,
+        quota_qty_tonnes: quota.qty_t,
+        consumed_bundles: consumedBundles,
+        pending_bundles: pendingBundles,
+        remaining_qty_tonnes: remainingQty,
+        tolerance_pct: quota.tolerance_pct,
+        utilization_pct: utilizationPct,
+        tolerance_status: utilizationPct > (100 + quota.tolerance_pct) ? 'OVER_TOLERANCE' : 
+                         utilizationPct > 100 ? 'OVER_QUOTA' : 'WITHIN_LIMITS',
+        call_off_count: callOffs?.length || 0
+      }
+    } catch (fallbackError) {
+      console.error('Fallback calculation also failed:', fallbackError)
+      throw error
+    }
   }
 }
 

@@ -681,6 +681,10 @@ serve(async (req) => {
           metal_code,
           destination_party_id,
           expected_ship_date,
+          delivery_location,
+          requested_delivery_date,
+          notes,
+          status,
           created_at,
           updated_at
         `)
@@ -1273,6 +1277,102 @@ serve(async (req) => {
           ...corsHeaders
         }
       })
+    }
+    
+    // Handle quota balance endpoint - path will be "/calloff-crud/quotas/:id/balance"
+    if (pathParts.length === 4 && pathParts[0] === 'calloff-crud' && pathParts[1] === 'quotas' && pathParts[3] === 'balance' && req.method === 'GET') {
+      console.log('Fetching quota balance')
+      
+      const quotaId = pathParts[2]
+      
+      try {
+        // First get the quota details
+        const { data: quota, error: quotaError } = await supabase
+          .from('quota')
+          .select('*')
+          .eq('quota_id', quotaId)
+          .single()
+        
+        if (quotaError || !quota) {
+          return new Response(JSON.stringify({
+            success: false,
+            error: `Quota not found: ${quotaError?.message || 'Invalid quota ID'}`
+          }), {
+            status: 404,
+            headers: { 
+              'Content-Type': 'application/json',
+              ...corsHeaders
+            }
+          })
+        }
+        
+        // Get all call-offs for this quota
+        const { data: callOffs, error: callOffError } = await supabase
+          .from('call_off')
+          .select('call_off_id, bundle_qty, status')
+          .eq('quota_id', quotaId)
+        
+        if (callOffError) {
+          throw new Error(`Failed to fetch call-offs: ${callOffError.message}`)
+        }
+        
+        // Calculate balances
+        const consumedBundles = (callOffs || [])
+          .filter(co => ['CONFIRMED', 'FULFILLED'].includes(co.status))
+          .reduce((sum, co) => sum + (co.bundle_qty || 0), 0)
+        
+        const pendingBundles = (callOffs || [])
+          .filter(co => co.status === 'NEW')
+          .reduce((sum, co) => sum + (co.bundle_qty || 0), 0)
+        
+        const totalUsed = consumedBundles + pendingBundles
+        const remainingQty = quota.qty_t - totalUsed
+        const utilizationPct = (consumedBundles / quota.qty_t) * 100
+        
+        // Determine tolerance status
+        let toleranceStatus = 'WITHIN_LIMITS'
+        if (utilizationPct > (100 + quota.tolerance_pct)) {
+          toleranceStatus = 'OVER_TOLERANCE'
+        } else if (utilizationPct > 100) {
+          toleranceStatus = 'OVER_QUOTA'
+        }
+        
+        const balance = {
+          quota_id: quotaId,
+          quota_qty_tonnes: quota.qty_t,
+          consumed_bundles: consumedBundles,
+          pending_bundles: pendingBundles,
+          remaining_qty_tonnes: remainingQty,
+          tolerance_pct: quota.tolerance_pct,
+          utilization_pct: utilizationPct,
+          tolerance_status: toleranceStatus,
+          call_off_count: (callOffs || []).length
+        }
+        
+        return new Response(JSON.stringify({
+          success: true,
+          data: balance
+        }), {
+          status: 200,
+          headers: { 
+            'Content-Type': 'application/json',
+            ...corsHeaders
+          }
+        })
+        
+      } catch (error) {
+        console.error('Error calculating quota balance:', error)
+        return new Response(JSON.stringify({
+          success: false,
+          error: `Failed to calculate balance: ${error.message}`
+        }), {
+          status: 500,
+          headers: { 
+            'Content-Type': 'application/json',
+            ...corsHeaders
+          }
+        })
+      }
     }
     
     // Handle quotas by counterparty endpoint - path will be "/calloff-crud/counterparties/:id/quotas"
