@@ -22,25 +22,10 @@ export function AuthProvider({ children }: AuthProviderProps) {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
 
-  // Clean up any corrupted session data on initialization
+  // Clean up only corrupted session data (not valid sessions from other instances)
   const cleanupSessionStorage = useCallback(() => {
     try {
-      // Check for multiple or corrupted Supabase sessions
-      const allKeys = Object.keys(localStorage)
-      const supabaseKeys = allKeys.filter(key => key.includes('supabase'))
-      
-      console.log('Found Supabase storage keys:', supabaseKeys.length)
-      
-      if (supabaseKeys.length > 3) { // Should typically only have 2-3 keys
-        console.log('Too many Supabase keys detected, cleaning up...')
-        supabaseKeys.forEach(key => {
-          if (key.includes('auth-token') || key.includes('session') || key.includes('refresh')) {
-            localStorage.removeItem(key)
-          }
-        })
-      }
-      
-      // Also clear any corrupted session data
+      // Only clean up corrupted session data, not valid sessions from other instances
       const authTokenKey = `sb-${supabase.supabaseUrl.split('//')[1].split('.')[0]}-auth-token`
       const existingToken = localStorage.getItem(authTokenKey)
       if (existingToken) {
@@ -96,13 +81,10 @@ export function AuthProvider({ children }: AuthProviderProps) {
     // Clean up any corrupted sessions first
     cleanupSessionStorage()
     
-    // Small delay to ensure cleanup is complete
-    setTimeout(() => {
-      // Get initial session
-      supabase.auth.getSession().then(({ data: { session } }) => {
-        handleSession(session).finally(() => setLoading(false))
-      })
-    }, 100)
+    // Get initial session
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      handleSession(session).finally(() => setLoading(false))
+    })
 
     // Listen for auth changes
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (_event, session) => {

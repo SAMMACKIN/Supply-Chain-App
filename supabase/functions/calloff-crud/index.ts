@@ -100,7 +100,9 @@ serve(async (req) => {
       
       // Now try to fetch actual data
       console.log('Attempting to fetch quota data...')
-      const { data, error } = await supabase
+      
+      // Try to fetch with business_unit_id, but handle gracefully if it doesn't exist
+      let { data, error } = await supabase
         .from('quota')
         .select(`
           quota_id,
@@ -116,6 +118,34 @@ serve(async (req) => {
         `)
         .order('period_month', { ascending: false })
         .limit(10)
+      
+      // If error mentions business_unit_id, retry without it
+      if (error && error.message.includes('business_unit_id')) {
+        console.log('Retrying without business_unit_id column...')
+        const result = await supabase
+          .from('quota')
+          .select(`
+            quota_id,
+            counterparty_id,
+            direction,
+            period_month,
+            qty_t,
+            tolerance_pct,
+            metal_code,
+            incoterm_code,
+            created_at
+          `)
+          .order('period_month', { ascending: false })
+          .limit(10)
+        
+        data = result.data
+        error = result.error
+        
+        // Add default business_unit_id to each record for frontend compatibility
+        if (data) {
+          data = data.map(quota => ({ ...quota, business_unit_id: 'DEFAULT' }))
+        }
+      }
       
       console.log('Quota query result:', { 
         dataLength: data?.length, 
@@ -1251,7 +1281,7 @@ serve(async (req) => {
       
       const counterpartyId = pathParts[2]
       
-      const { data, error } = await supabase
+      let { data, error } = await supabase
         .from('quota')
         .select(`
           quota_id,
@@ -1273,6 +1303,40 @@ serve(async (req) => {
         `)
         .eq('counterparty_id', counterpartyId)
         .order('period_month', { ascending: false })
+      
+      // If error mentions business_unit_id, retry without it
+      if (error && error.message.includes('business_unit_id')) {
+        console.log('Retrying quota query without business_unit_id column...')
+        const result = await supabase
+          .from('quota')
+          .select(`
+            quota_id,
+            counterparty_id,
+            direction,
+            period_month,
+            qty_t,
+            tolerance_pct,
+            metal_code,
+            incoterm_code,
+            created_at,
+            counterparty:counterparty_id (
+              company_name,
+              company_code,
+              counterparty_type,
+              country_code
+            )
+          `)
+          .eq('counterparty_id', counterpartyId)
+          .order('period_month', { ascending: false })
+        
+        data = result.data
+        error = result.error
+        
+        // Add default business_unit_id to each record for frontend compatibility
+        if (data) {
+          data = data.map(quota => ({ ...quota, business_unit_id: 'DEFAULT' }))
+        }
+      }
       
       if (error) {
         console.error('Database error:', error)
