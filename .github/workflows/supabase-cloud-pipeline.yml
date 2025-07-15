@@ -29,16 +29,23 @@ jobs:
           # Link to dev project
           supabase link --project-ref ${{ secrets.SUPABASE_DEV_PROJECT_REF }}
           
-          # Show pending migrations
-          echo "📋 Pending migrations:"
-          supabase migration list --password ${{ secrets.SUPABASE_DEV_DB_PASSWORD }} || true
+          # List current migrations
+          echo "📋 Current migration status:"
+          supabase migration list --db-url "${{ secrets.SUPABASE_DEV_DB_URL }}" || echo "Could not list migrations"
           
-          # Deploy database migrations with error handling
+          # Deploy database migrations (fail on error)
           echo "🗄️ Applying database migrations..."
-          supabase db push --password ${{ secrets.SUPABASE_DEV_DB_PASSWORD }} || {
-            echo "⚠️  Some migrations failed - this might be OK if tables already exist"
-            echo "Continuing with deployment..."
-          }
+          if ! supabase db push --db-url "${{ secrets.SUPABASE_DEV_DB_URL }}"; then
+            echo "❌ Migration failed! Check the migration files for errors."
+            echo "Hint: The error above shows which migration failed."
+            exit 1
+          fi
+          
+          echo "✅ Database migrations applied successfully!"
+          
+          # Verify migration status
+          echo "📊 Post-migration status:"
+          supabase migration list --db-url "${{ secrets.SUPABASE_DEV_DB_URL }}" || true
           
           # Deploy Edge Functions
           echo "⚡ Deploying Edge Functions..."
@@ -65,18 +72,27 @@ jobs:
           # Link to production project
           supabase link --project-ref ${{ secrets.SUPABASE_PROJECT_REF }}
           
-          # Show what will be deployed
-          echo "📋 Migrations to be applied:"
-          supabase migration list --password ${{ secrets.SUPABASE_DB_PASSWORD }}
+          # List current migrations
+          echo "📋 Current migration status:"
+          supabase migration list --db-url "${{ secrets.SUPABASE_DB_URL }}" || echo "Could not list migrations"
           
-          # Deploy database migrations
-          supabase db push --password ${{ secrets.SUPABASE_DB_PASSWORD }} || {
-            echo "⚠️  Migration failed - attempting to sync production state"
-            # Run the fix migration directly if needed
-            supabase db push --password ${{ secrets.SUPABASE_DB_PASSWORD }} --include-all || true
-          }
+          # Deploy database migrations (fail on error)
+          echo "🗄️ Applying database migrations..."
+          if ! supabase db push --db-url "${{ secrets.SUPABASE_DB_URL }}"; then
+            echo "❌ Migration failed! Check the migration files for errors."
+            echo "Hint: The error above shows which migration failed."
+            echo "⚠️  IMPORTANT: Production deployment stopped to prevent issues."
+            exit 1
+          fi
+          
+          echo "✅ Database migrations applied successfully!"
+          
+          # Verify migration status
+          echo "📊 Post-migration status:"
+          supabase migration list --db-url "${{ secrets.SUPABASE_DB_URL }}" || true
           
           # Deploy Edge Functions
+          echo "⚡ Deploying Edge Functions..."
           supabase functions deploy calloff-crud --project-ref ${{ secrets.SUPABASE_PROJECT_REF }}
           
           echo "✅ Production deployment complete!"

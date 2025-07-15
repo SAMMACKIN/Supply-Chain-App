@@ -25,10 +25,14 @@ npm install
 ### 2. Configure Supabase
 
 1. Create a new Supabase project at https://supabase.com
-2. Go to SQL Editor in your Supabase dashboard
-3. Run these two SQL files in order:
-   - `supabase/migrations/00_complete_schema.sql` (creates all tables)
-   - `supabase/migrations/01_initial_data.sql` (adds test data)
+2. **Option A - Automatic** (if using GitHub Actions):
+   - Migrations will run automatically when you deploy
+   - Skip to step 3
+3. **Option B - Manual** (for local testing):
+   - Go to SQL Editor in your Supabase dashboard
+   - Run these two SQL files in order:
+     - `supabase/migrations/00_complete_schema.sql` (creates all tables)
+     - `supabase/migrations/01_initial_data.sql` (adds test data)
 
 ### 3. Configure Environment
 
