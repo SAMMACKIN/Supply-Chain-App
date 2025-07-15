@@ -1,140 +1,94 @@
-# Quick Start Guide - Fix Production Now & Set Up Pipeline
+# Quick Start Guide
 
-## 🚨 Immediate Fix for Production (5 minutes)
+Get the Supply Chain App running in 5 minutes!
 
-While we set up the proper pipeline, let's get production working:
+## Prerequisites
 
-### Option 1: Use the Migration File
-1. Go to: https://supabase.com/dashboard/project/brixbdbunhwlhuwunqxw/sql
-2. Copy contents of: `supabase/migrations/20250114120000_sync_production_schema.sql`
-3. Paste and run in SQL Editor
-4. Your production app should now work!
+- Node.js 18+
+- Supabase account (free tier works)
+- Git
 
-### Option 2: Temporarily Use Mock Data
-1. Go to Vercel Dashboard
-2. Set `VITE_DEV_MODE = true` for production
-3. Redeploy
-4. App will use mock data (no database needed)
+## Setup Steps
 
-## 🎯 Set Up Proper Pipeline (30 minutes)
-
-### Step 1: Install Supabase CLI
-```bash
-# In Terminal:
-brew install supabase/tap/supabase
-```
-
-### Step 2: Run Setup Script
-```bash
-# In your project directory:
-./scripts/setup-local-supabase.sh
-```
-
-This script will:
-- ✅ Check installations
-- ✅ Login to Supabase
-- ✅ Link to your dev project
-- ✅ Pull current schema
-- ✅ Create branch structure
-- ✅ Start local Supabase
-
-### Step 3: Configure Your Workflow
-
-After setup, your workflow will be:
-
-```
-1. Make changes locally → 2. Test with local Supabase → 3. Push to develop → 4. Auto-deploy to dev → 5. PR to main → 6. Auto-deploy to prod
-```
-
-### Step 4: First Migration Test
+### 1. Clone & Install
 
 ```bash
-# Create a test migration
-supabase migration new test_pipeline
+# Clone the repository
+git clone https://github.com/SAMMACKIN/Supply-Chain-App.git
+cd Supply-Chain-App
 
-# Add a simple change to the file
-echo "-- Test migration" >> supabase/migrations/*test_pipeline.sql
-
-# Commit and push to develop
-git add .
-git commit -m "Test pipeline"
-git push origin develop
-
-# Watch GitHub Actions deploy it
+# Install frontend dependencies
+cd frontend
+npm install
 ```
 
-## 📋 Your New Development Workflow
+### 2. Configure Supabase
 
-### For Database Changes:
+1. Create a new Supabase project at https://supabase.com
+2. Go to SQL Editor in your Supabase dashboard
+3. Run these two SQL files in order:
+   - `supabase/migrations/00_complete_schema.sql` (creates all tables)
+   - `supabase/migrations/01_initial_data.sql` (adds test data)
+
+### 3. Configure Environment
+
 ```bash
-# 1. Create migration
-supabase migration new add_new_table
-
-# 2. Edit the .sql file
-
-# 3. Test locally
-supabase db reset
-
-# 4. Push to develop
-git push origin develop
+# In the frontend directory
+cp .env.example .env.local
 ```
 
-### For Code Changes:
+Edit `.env.local` with your Supabase details:
+```
+VITE_SUPABASE_URL=https://YOUR_PROJECT_ID.supabase.co
+VITE_SUPABASE_ANON_KEY=your-anon-key
+VITE_DEV_MODE=false
+```
+
+### 4. Deploy Edge Functions
+
+In Supabase dashboard:
+1. Go to Edge Functions
+2. Create new function named `calloff-crud`
+3. Copy contents of `supabase/functions/calloff-crud/index.ts`
+4. Deploy
+
+### 5. Run the App
+
 ```bash
-# 1. Make changes
-# 2. Test locally
 npm run dev
-
-# 3. Push to develop
-git push origin develop
-
-# 4. Create PR to main when ready
 ```
 
-## 🔄 Branching Strategy
+Visit http://localhost:5173
 
-- **main** → Production (auto-deploys)
-- **develop** → Development (auto-deploys)
-- **feature/** → Your work branches
+## Default Login
 
-## 🛠️ Useful Commands
+Create a user in Supabase Auth or use the dev mode:
+- Set `VITE_DEV_MODE=true` in `.env.local`
+- Any email/password will work
 
-```bash
-# See local Supabase info
-supabase status
+## Features
 
-# Create migration
-supabase migration new <name>
+- **Quotas**: View metal quotas by period
+- **Call-offs**: Create orders against quotas  
+- **Shipments**: Split call-offs into deliveries
+- **Multi-tenant**: Business unit isolation
 
-# Reset local database
-supabase db reset
+## Troubleshooting
 
-# See what will deploy
-supabase migration list
+**Quotas not loading?**
+- Check Edge Function logs in Supabase dashboard
+- Verify `calloff-crud` function is deployed
 
-# Stop local Supabase
-supabase stop
-```
+**Can't create shipment lines?**
+- Run the test script in `test-shipment-fix.sql`
+- Ensures all required columns exist
 
-## ❓ Common Issues
+**Login issues?**
+- Enable email confirmations in Supabase Auth settings
+- Or use dev mode for testing
 
-**"Command not found: supabase"**
-- Run: `brew install supabase/tap/supabase`
+## Next Steps
 
-**"Not linked to a project"**
-- Run: `supabase link --project-ref pxwtdaqhwzweedflwora`
-
-**"Port already in use"**
-- Run: `supabase stop` then `supabase start`
-
-## 🎉 Success Checklist
-
-- [ ] Production app is working
-- [ ] Supabase CLI installed
-- [ ] Local development environment running
-- [ ] First test migration deployed
-- [ ] Team knows the new workflow
-
----
-
-**Need help?** Check `/docs/COMPLETE_CICD_SETUP.md` for detailed instructions.
+- Read the [Architecture Guide](./ARCHITECTURE.md)
+- Check [Deployment Guide](./DEPLOYMENT.md) for production setup
+- Join discussions in [Issues](https://github.com/SAMMACKIN/Supply-Chain-App/issues)

@@ -39,6 +39,7 @@ WITH counterparty_data AS (
     LIMIT 5
 )
 INSERT INTO quota (
+    quota_id,
     counterparty_id, 
     direction, 
     period_month, 
@@ -50,11 +51,12 @@ INSERT INTO quota (
     created_at
 )
 SELECT 
+    gen_random_uuid(),
     cd.counterparty_id,
     CASE 
-        WHEN cd.counterparty_type = 'SUPPLIER' THEN 'BUY'
-        WHEN cd.counterparty_type = 'CUSTOMER' THEN 'SELL'
-        ELSE CASE WHEN cd.rn % 2 = 0 THEN 'BUY' ELSE 'SELL' END
+        WHEN cd.counterparty_type = 'SUPPLIER' THEN 'BUY'::direction_enum
+        WHEN cd.counterparty_type = 'CUSTOMER' THEN 'SELL'::direction_enum
+        ELSE CASE WHEN cd.rn % 2 = 0 THEN 'BUY'::direction_enum ELSE 'SELL'::direction_enum END
     END as direction,
     dates.period_month,
     quantities.qty_t,
@@ -107,6 +109,7 @@ WHERE
 
 -- Add some additional realistic quotas
 INSERT INTO quota (
+    quota_id,
     counterparty_id, 
     direction, 
     period_month, 
@@ -117,11 +120,12 @@ INSERT INTO quota (
     incoterm_code
 )
 SELECT 
+    gen_random_uuid(),
     counterparty_id,
     CASE 
-        WHEN counterparty_type = 'SUPPLIER' THEN 'BUY'
-        WHEN counterparty_type = 'CUSTOMER' THEN 'SELL'
-        ELSE 'BUY'
+        WHEN counterparty_type = 'SUPPLIER' THEN 'BUY'::direction_enum
+        WHEN counterparty_type = 'CUSTOMER' THEN 'SELL'::direction_enum
+        ELSE 'BUY'::direction_enum
     END,
     '2025-01-01'::DATE,
     750.0,
