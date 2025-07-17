@@ -129,13 +129,19 @@ export function AuthProvider({ children }: AuthProviderProps) {
         sessionSync.notifySessionCleared()
         setLoading(false)
       } else if (event === 'SIGNED_IN') {
-        console.log('User signed in, updating session...')
+        console.log('User signed in, updating session...', { loading, user: !!user })
+        // Prevent duplicate handling
+        if (!loading) {
+          console.log('Already loaded, skipping duplicate SIGNED_IN event')
+          return
+        }
         sessionSync.notifySessionUpdated()
         try {
           await handleSession(session)
         } catch (error) {
           console.error('Error handling session:', error)
         } finally {
+          console.log('Setting loading to false after SIGNED_IN')
           setLoading(false)
         }
       } else if (event === 'SIGNED_OUT') {
