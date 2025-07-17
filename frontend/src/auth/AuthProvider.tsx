@@ -25,38 +25,8 @@ export function AuthProvider({ children }: AuthProviderProps) {
 
   // Clean up corrupted or expired session data
   const cleanupSessionStorage = useCallback(() => {
-    try {
-      const projectRef = supabase.supabaseUrl.split('//')[1].split('.')[0]
-      const authTokenKey = `sb-${projectRef}-auth-token`
-      
-      const existingToken = localStorage.getItem(authTokenKey)
-      if (existingToken) {
-        try {
-          const tokenData = JSON.parse(existingToken)
-          // Check if token is expired or corrupted
-          if (!tokenData.expires_at || new Date(tokenData.expires_at * 1000) < new Date()) {
-            console.log('Expired auth token detected, removing...')
-            localStorage.removeItem(authTokenKey)
-            // Also clear related storage
-            Object.keys(localStorage).forEach(key => {
-              if (key.startsWith(`sb-${projectRef}-`)) {
-                localStorage.removeItem(key)
-              }
-            })
-          }
-        } catch {
-          console.log('Corrupted auth token detected, removing all auth data...')
-          // Clear all Supabase-related storage for this project
-          Object.keys(localStorage).forEach(key => {
-            if (key.startsWith(`sb-${projectRef}-`)) {
-              localStorage.removeItem(key)
-            }
-          })
-        }
-      }
-    } catch (err) {
-      console.error('Error during session cleanup:', err)
-    }
+    // Removed aggressive cleanup - let Supabase handle its own storage
+    console.log('Session cleanup check completed')
   }, [])
 
   // Fetch user profile from the database
@@ -82,14 +52,21 @@ export function AuthProvider({ children }: AuthProviderProps) {
 
   // Handle session changes
   const handleSession = async (session: Session | null) => {
+    console.log('handleSession called with:', session ? 'valid session' : 'null session')
+    
     if (session?.user) {
+      console.log('Fetching user profile for:', session.user.id)
       const profile = await fetchUserProfile(session.user.id)
+      console.log('User profile fetched:', profile ? 'success' : 'failed')
+      
       setUser({
         id: session.user.id,
         email: session.user.email || '',
         profile: profile || undefined
       })
+      console.log('User state updated')
     } else {
+      console.log('No session, clearing user')
       setUser(null)
     }
   }
@@ -115,27 +92,35 @@ export function AuthProvider({ children }: AuthProviderProps) {
     }, 5000) // 5 second timeout
     
     // Get initial session
-    supabase.auth.getSession().then(({ data: { session }, error }) => {
-      clearTimeout(loadingTimeout)
-      
-      if (error) {
-        console.error('Error getting session:', error)
-        // If there's an error getting the session, try to recover by signing out
-        if (error.message?.includes('session') || error.message?.includes('refresh_token')) {
-          console.log('Session error detected, clearing auth state...')
-          supabase.auth.signOut().then(() => {
-            sessionSync.notifySessionCleared()
-            handleSession(null).finally(() => setLoading(false))
-          })
-          return
+    const initializeAuth = async () => {
+      try {
+        const { data: { session }, error } = await supabase.auth.getSession()
+        clearTimeout(loadingTimeout)
+        
+        if (error) {
+          console.error('Error getting session:', error)
+          setUser(null)
+        } else {
+          await handleSession(session)
         }
+      } catch (err) {
+        console.error('Failed to initialize auth:', err)
+        setUser(null)
+      } finally {
+        setLoading(false)
       }
-      handleSession(session).finally(() => setLoading(false))
-    })
+    }
+    
+    initializeAuth()
 
     // Listen for auth changes
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
       console.log('Auth state changed:', event)
+      
+      // Clear any existing timeout when auth state changes
+      if (loadingTimeout) {
+        clearTimeout(loadingTimeout)
+      }
       
       // Handle session errors
       if (event === 'TOKEN_REFRESHED' && !session) {
@@ -144,15 +129,31 @@ export function AuthProvider({ children }: AuthProviderProps) {
         sessionSync.notifySessionCleared()
         setLoading(false)
       } else if (event === 'SIGNED_IN') {
+        console.log('User signed in, updating session...')
         sessionSync.notifySessionUpdated()
-        await handleSession(session)
-        setLoading(false)
+        try {
+          await handleSession(session)
+        } catch (error) {
+          console.error('Error handling session:', error)
+        } finally {
+          setLoading(false)
+        }
       } else if (event === 'SIGNED_OUT') {
         sessionSync.notifySessionCleared()
         setUser(null)
         setLoading(false)
       } else if (event === 'USER_UPDATED') {
         await handleSession(session)
+      } else if (event === 'INITIAL_SESSION') {
+        // Handle initial session load
+        if (session) {
+          try {
+            await handleSession(session)
+          } catch (error) {
+            console.error('Error handling initial session:', error)
+          }
+        }
+        setLoading(false)
       }
     })
 

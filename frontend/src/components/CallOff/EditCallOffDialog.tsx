@@ -98,11 +98,13 @@ export function EditCallOffDialog({ callOff, open, onClose }: EditCallOffDialogP
                 label="Bundle Quantity (tonnes)"
                 {...register('bundle_qty', { 
                   required: 'Bundle quantity is required',
-                  min: { value: 1, message: 'Minimum 1 tonne' }
+                  min: { value: 1, message: 'Minimum 1 tonne' },
+                  valueAsNumber: true
                 })}
                 error={!!errors.bundle_qty}
                 helperText={errors.bundle_qty?.message}
                 inputProps={{ min: 1 }}
+                sx={{ mb: 1 }}
               />
 
               <TextField

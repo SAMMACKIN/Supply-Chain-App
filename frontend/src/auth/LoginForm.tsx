@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useNavigate, useLocation, Link as RouterLink } from 'react-router-dom'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
@@ -33,12 +33,20 @@ const loginSchema = z.object({
 export function LoginForm() {
   const navigate = useNavigate()
   const location = useLocation()
-  const { login } = useAuth()
+  const { login, user, loading } = useAuth()
   const [showPassword, setShowPassword] = useState(false)
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   
   const from = location.state?.from?.pathname || '/dashboard'
+  
+  // Redirect if already logged in
+  useEffect(() => {
+    if (user && !loading) {
+      console.log('User already logged in, redirecting to:', from)
+      navigate(from, { replace: true })
+    }
+  }, [user, loading, navigate, from])
   
   const {
     register,
@@ -54,10 +62,14 @@ export function LoginForm() {
     
     try {
       await login(data)
-      navigate(from, { replace: true })
+      console.log('Login successful, navigating to:', from)
+      // Add a small delay to ensure auth state is fully updated
+      setTimeout(() => {
+        navigate(from, { replace: true })
+      }, 100)
     } catch (err) {
+      console.error('Login error:', err)
       setError(err instanceof Error ? err.message : 'Login failed')
-    } finally {
       setIsLoading(false)
     }
   }

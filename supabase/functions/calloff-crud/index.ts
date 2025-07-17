@@ -380,12 +380,32 @@ serve(async (req) => {
       console.log('Call-off update request:', body)
       
       // Build update data from request
-      const updateData: any = {}
+      const updateData: any = {
+        updated_at: new Date().toISOString()
+      }
       if (body.bundle_qty !== undefined) updateData.bundle_qty = body.bundle_qty
       if (body.requested_delivery_date !== undefined) updateData.requested_delivery_date = body.requested_delivery_date
       if (body.fulfillment_location !== undefined) updateData.fulfillment_location = body.fulfillment_location
       if (body.delivery_location !== undefined) updateData.delivery_location = body.delivery_location
       
+      // Validate at least one field is being updated
+      const fieldsToUpdate = Object.keys(updateData).filter(key => key !== 'updated_at')
+      if (fieldsToUpdate.length === 0) {
+        return new Response(JSON.stringify({
+          success: false,
+          error: 'No fields to update'
+        }), {
+          status: 400,
+          headers: { 
+            'Content-Type': 'application/json',
+            ...corsHeaders
+          }
+        })
+      }
+
+      console.log('Updating call-off with data:', updateData)
+      console.log('Call-off ID:', callOffId)
+
       const { data, error } = await supabase
         .from('call_off')
         .update(updateData)
@@ -396,9 +416,25 @@ serve(async (req) => {
       
       if (error) {
         console.error('Database error updating call-off:', error)
+        console.error('Error details:', {
+          code: error.code,
+          details: error.details,
+          hint: error.hint,
+          message: error.message
+        })
+        
+        // Check for trigger errors
+        if (error.message?.includes('trigger') || error.message?.includes('function')) {
+          console.error('Trigger error detected - database may need fix')
+        }
+        
         return new Response(JSON.stringify({
           success: false,
-          error: `Failed to update call-off: ${error.message}`
+          error: `Failed to update call-off: ${error.message}`,
+          details: {
+            code: error.code,
+            hint: error.hint
+          }
         }), {
           status: 500,
           headers: { 

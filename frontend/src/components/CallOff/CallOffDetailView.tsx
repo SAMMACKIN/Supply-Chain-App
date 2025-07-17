@@ -25,7 +25,7 @@ import {
   LocalShipping as ShippingIcon,
   AccountBalance as QuotaIcon
 } from '@mui/icons-material'
-import { fetchQuotaBalance } from '../../services/calloff-api'
+import { fetchQuotaBalance, fetchAvailableQuotas } from '../../services/calloff-api'
 import { ShipmentLineList } from './ShipmentLineList'
 import type { CallOff } from '../../types/calloff'
 
@@ -51,6 +51,16 @@ export function CallOffDetailView({ callOff, open, onClose, onEdit }: CallOffDet
     enabled: open && !!callOff.quota_id,
     staleTime: 30 * 1000, // 30 seconds
   })
+
+  // Query quota details to get readable information
+  const { data: quotas } = useQuery({
+    queryKey: ['quotas'],
+    queryFn: fetchAvailableQuotas,
+    enabled: open && !!callOff.quota_id,
+    staleTime: 60 * 1000, // 60 seconds
+  })
+
+  const quota = quotas?.find(q => q.quota_id === callOff.quota_id)
 
 
   // Log errors for debugging
@@ -211,9 +221,9 @@ export function CallOffDetailView({ callOff, open, onClose, onEdit }: CallOffDet
                 ) : quotaBalance ? (
                   <Box sx={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 2 }}>
                     <Box>
-                      <Typography variant="body2" color="text.secondary">Quota ID</Typography>
-                      <Typography variant="body1" sx={{ fontFamily: 'monospace', fontSize: '0.875rem' }}>
-                        {callOff.quota_id.slice(0, 8)}...
+                      <Typography variant="body2" color="text.secondary">Quota Details</Typography>
+                      <Typography variant="body1" sx={{ fontWeight: 500 }}>
+                        {quota ? `${quota.metal_code} - ${format(new Date(quota.period_month), 'MMM yyyy')}` : `ID: ${callOff.quota_id.slice(0, 8)}...`}
                       </Typography>
                     </Box>
                     <Box>
