@@ -1,4 +1,6 @@
-import { useMemo, useState } from 'react'
+import { useMemo, useState, useEffect } from 'react'
+import { useLocation } from 'react-router-dom'
+import { useQuery } from '@tanstack/react-query'
 import {
   Box,
   Typography,
@@ -19,13 +21,38 @@ import { CreateCallOffWizard } from '../components/CallOff/CreateCallOffWizard'
 import { CallOffList } from '../components/CallOff/CallOffList'
 import { CallOffDetailView } from '../components/CallOff/CallOffDetailView'
 import { EditCallOffDialog } from '../components/CallOff/EditCallOffDialog'
+import { fetchCallOffs } from '../services/calloff-api'
 import type { CallOff } from '../types/calloff'
 
 export function MuiCallOffs() {
+  const location = useLocation()
   const [showCreateWizard, setShowCreateWizard] = useState(false)
   const [selectedCallOff, setSelectedCallOff] = useState<CallOff | null>(null)
   const [showDetailView, setShowDetailView] = useState(false)
   const [showEditDialog, setShowEditDialog] = useState(false)
+  
+  // Get the selected call-off ID from navigation state
+  const selectedCallOffId = location.state?.selectedCallOffId
+  
+  // Fetch call-offs to find the selected one
+  const { data: callOffs } = useQuery({
+    queryKey: ['call-offs'],
+    queryFn: fetchCallOffs,
+    enabled: !!selectedCallOffId
+  })
+  
+  // Auto-open the detail view if navigated with a selected call-off
+  useEffect(() => {
+    if (selectedCallOffId && callOffs) {
+      const callOff = callOffs.find(co => co.call_off_id === selectedCallOffId)
+      if (callOff) {
+        setSelectedCallOff(callOff)
+        setShowDetailView(true)
+        // Clear the state to prevent re-opening on refresh
+        window.history.replaceState({}, document.title)
+      }
+    }
+  }, [selectedCallOffId, callOffs])
 
   const handleViewCallOff = (callOff: CallOff) => {
     setSelectedCallOff(callOff)
@@ -83,6 +110,11 @@ export function MuiCallOffs() {
       <CreateCallOffWizard 
         open={showCreateWizard}
         onClose={() => setShowCreateWizard(false)}
+        onSuccess={(callOff) => {
+          setShowCreateWizard(false)
+          setSelectedCallOff(callOff)
+          setShowDetailView(true)
+        }}
       />
 
       {/* Call-Off Detail View */}

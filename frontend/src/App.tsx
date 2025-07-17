@@ -10,6 +10,7 @@ import { MuiLayout } from './components/layout/MuiLayout'
 import { SimpleDashboard } from './pages/SimpleDashboard'
 import { MuiCallOffs } from './pages/MuiCallOffs'
 import { MuiQuotas } from './pages/MuiQuotas'
+import { ConsolidatedView } from './pages/ConsolidatedView'
 import { Inventory } from './pages/Inventory'
 import { LoginForm } from './auth/LoginForm'
 import { RegisterForm } from './auth/RegisterForm'
@@ -59,6 +60,13 @@ function App() {
               }>
                 <Route index element={<Navigate to="/dashboard" replace />} />
                 <Route path="/dashboard" element={<SimpleDashboard />} />
+                <Route path="/consolidated" element={
+                  <ProtectedRoute roles={['OPS', 'TRADE', 'PLANNER', 'ADMIN']}>
+                    <QueryProvider>
+                      <ConsolidatedView />
+                    </QueryProvider>
+                  </ProtectedRoute>
+                } />
                 <Route path="/quotas" element={
                   <ProtectedRoute roles={['OPS', 'TRADE', 'PLANNER', 'ADMIN']}>
                     <QueryProvider>

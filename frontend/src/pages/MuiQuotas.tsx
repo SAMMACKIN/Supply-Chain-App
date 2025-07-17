@@ -1,6 +1,7 @@
 import { useMemo, useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { format } from 'date-fns'
+import { useNavigate } from 'react-router-dom'
 import {
   Box,
   Typography,
@@ -36,6 +37,7 @@ import { CreateCallOffWizard } from '../components/CallOff/CreateCallOffWizard'
 
 export function MuiQuotas() {
   const theme = useTheme()
+  const navigate = useNavigate()
   const [searchText, setSearchText] = useState('')
   const [showCreateWizard, setShowCreateWizard] = useState(false)
   const [selectedQuota, setSelectedQuota] = useState<Quota | undefined>()
@@ -265,6 +267,10 @@ export function MuiQuotas() {
         onClose={() => {
           setShowCreateWizard(false)
           setSelectedQuota(undefined)
+        }}
+        onSuccess={(callOff) => {
+          // Navigate to call-offs page with the new call-off selected
+          navigate('/mui/call-offs', { state: { selectedCallOffId: callOff.call_off_id } })
         }}
         initialQuota={selectedQuota}
       />

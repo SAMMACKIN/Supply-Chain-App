@@ -28,7 +28,7 @@ import {
 } from '@mui/material'
 import { useToast } from '../../hooks/useToast'
 import { fetchCounterparties, fetchQuotasByCounterparty, createCallOff } from '../../services/calloff-api'
-import type { Counterparty, Quota, CreateCallOffRequest } from '../../types/calloff'
+import type { Counterparty, Quota, CreateCallOffRequest, CallOff } from '../../types/calloff'
 
 const callOffSchema = z.object({
   counterparty_id: z.string().min(1, 'Please select a counterparty'),
@@ -44,13 +44,14 @@ type CallOffFormData = z.infer<typeof callOffSchema>
 interface CreateCallOffWizardProps {
   open: boolean
   onClose: () => void
+  onSuccess?: (callOff: CallOff) => void
   initialCounterpartyId?: string // For future email integration
   initialQuota?: Quota // When creating from quota page
 }
 
 const steps = ['Select Counterparty', 'Choose Quota', 'Call-Off Details']
 
-export function CreateCallOffWizard({ open, onClose, initialCounterpartyId, initialQuota }: CreateCallOffWizardProps) {
+export function CreateCallOffWizard({ open, onClose, onSuccess, initialCounterpartyId, initialQuota }: CreateCallOffWizardProps) {
   const [activeStep, setActiveStep] = useState(initialQuota ? 2 : 0)
   const [selectedCounterparty, setSelectedCounterparty] = useState<Counterparty | null>(null)
   const [selectedQuota, setSelectedQuota] = useState<Quota | null>(initialQuota || null)
@@ -95,9 +96,14 @@ export function CreateCallOffWizard({ open, onClose, initialCounterpartyId, init
   // Create call-off mutation
   const createMutation = useMutation({
     mutationFn: createCallOff,
-    onSuccess: () => {
+    onSuccess: (callOff: CallOff) => {
       toast.success('Call-off created successfully!')
       queryClient.invalidateQueries({ queryKey: ['call-offs'] })
+      queryClient.invalidateQueries({ queryKey: ['quota-balance', callOff.quota_id] })
+      
+      if (onSuccess) {
+        onSuccess(callOff)
+      }
       handleClose()
     },
     onError: (error: Error) => {

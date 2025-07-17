@@ -24,10 +24,12 @@ import {
   Menu as MenuIcon,
   Close as CloseIcon,
   Person as PersonIcon,
+  AccountTree as ConsolidatedIcon,
 } from '@mui/icons-material'
 
 const navigation = [
   { name: 'Dashboard', href: '/dashboard', icon: DashboardIcon, testid: 'nav-dashboard' },
+  { name: 'Consolidated View', href: '/consolidated', icon: ConsolidatedIcon, testid: 'nav-consolidated' },
   { name: 'Quotas', href: '/quotas', icon: QuotasIcon, testid: 'nav-quotas' },
   { name: 'Call-Offs', href: '/call-offs', icon: CallOffsIcon, testid: 'nav-call-offs' },
   { name: 'Transport Orders', href: '/transport', icon: TransportIcon, testid: 'nav-transport' },
