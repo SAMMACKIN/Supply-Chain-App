@@ -10,6 +10,7 @@ import type {
   UserRole 
 } from '../types/auth'
 import { hasPermission } from '../utils/auth-helpers'
+import { sessionSync } from '../utils/session-sync'
 
 export const AuthContext = createContext<AuthContextType | null>(null)
 
@@ -22,18 +23,35 @@ export function AuthProvider({ children }: AuthProviderProps) {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
 
-  // Clean up only corrupted session data (not valid sessions from other instances)
+  // Clean up corrupted or expired session data
   const cleanupSessionStorage = useCallback(() => {
     try {
-      // Only clean up corrupted session data, not valid sessions from other instances
-      const authTokenKey = `sb-${supabase.supabaseUrl.split('//')[1].split('.')[0]}-auth-token`
+      const projectRef = supabase.supabaseUrl.split('//')[1].split('.')[0]
+      const authTokenKey = `sb-${projectRef}-auth-token`
+      
       const existingToken = localStorage.getItem(authTokenKey)
       if (existingToken) {
         try {
-          JSON.parse(existingToken)
+          const tokenData = JSON.parse(existingToken)
+          // Check if token is expired or corrupted
+          if (!tokenData.expires_at || new Date(tokenData.expires_at * 1000) < new Date()) {
+            console.log('Expired auth token detected, removing...')
+            localStorage.removeItem(authTokenKey)
+            // Also clear related storage
+            Object.keys(localStorage).forEach(key => {
+              if (key.startsWith(`sb-${projectRef}-`)) {
+                localStorage.removeItem(key)
+              }
+            })
+          }
         } catch {
-          console.log('Corrupted auth token detected, removing...')
-          localStorage.removeItem(authTokenKey)
+          console.log('Corrupted auth token detected, removing all auth data...')
+          // Clear all Supabase-related storage for this project
+          Object.keys(localStorage).forEach(key => {
+            if (key.startsWith(`sb-${projectRef}-`)) {
+              localStorage.removeItem(key)
+            }
+          })
         }
       }
     } catch (err) {
@@ -78,20 +96,55 @@ export function AuthProvider({ children }: AuthProviderProps) {
 
   // Initialize auth state
   useEffect(() => {
+    // Initialize session sync
+    sessionSync.init(() => {
+      // Another tab cleared the session
+      setUser(null)
+      setLoading(false)
+    })
+
     // Clean up any corrupted sessions first
     cleanupSessionStorage()
     
     // Get initial session
-    supabase.auth.getSession().then(({ data: { session } }) => {
+    supabase.auth.getSession().then(({ data: { session }, error }) => {
+      if (error) {
+        console.error('Error getting session:', error)
+        // If there's an error getting the session, try to recover by signing out
+        if (error.message?.includes('session') || error.message?.includes('refresh_token')) {
+          console.log('Session error detected, clearing auth state...')
+          supabase.auth.signOut().then(() => {
+            sessionSync.notifySessionCleared()
+            handleSession(null).finally(() => setLoading(false))
+          })
+          return
+        }
+      }
       handleSession(session).finally(() => setLoading(false))
     })
 
     // Listen for auth changes
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (_event, session) => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
+      console.log('Auth state changed:', event)
+      
+      // Handle session errors
+      if (event === 'TOKEN_REFRESHED' && !session) {
+        console.log('Token refresh failed, clearing session...')
+        await supabase.auth.signOut()
+        sessionSync.notifySessionCleared()
+      } else if (event === 'SIGNED_IN') {
+        sessionSync.notifySessionUpdated()
+      } else if (event === 'SIGNED_OUT') {
+        sessionSync.notifySessionCleared()
+      }
+      
       await handleSession(session)
     })
 
-    return () => subscription.unsubscribe()
+    return () => {
+      subscription.unsubscribe()
+      sessionSync.cleanup()
+    }
   }, [])
 
   // Login function
@@ -193,6 +246,10 @@ export function AuthProvider({ children }: AuthProviderProps) {
       
       const { error } = await supabase.auth.signOut()
       if (error) throw error
+      
+      // Notify other tabs about logout
+      sessionSync.notifySessionCleared()
+      
       setUser(null)
       // Force reload to clear any cached state
       window.location.href = '/login'
