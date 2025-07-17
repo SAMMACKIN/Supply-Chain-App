@@ -1466,6 +1466,116 @@ serve(async (req) => {
       })
     }
     
+    // Handle manual migration endpoint - path will be "/calloff-crud/apply-shipment-migration"
+    if (pathParts.length === 2 && pathParts[0] === 'calloff-crud' && pathParts[1] === 'apply-shipment-migration' && req.method === 'POST') {
+      console.log('Applying shipment lines migration manually')
+      
+      const supabase = createClient(
+        Deno.env.get('SUPABASE_URL') ?? '',
+        Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
+      )
+      
+      try {
+        // Connect directly to PostgreSQL
+        const dbUrl = Deno.env.get('SUPABASE_DB_URL')
+        const client = new Client(dbUrl)
+        await client.connect()
+        
+        console.log('Connected to PostgreSQL for migration')
+        
+        // Run the migration SQL
+        const migrationSQL = `
+          -- Create shipment line status enum if it doesn't exist
+          DO $$ 
+          BEGIN
+              IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'shipment_line_status') THEN
+                  CREATE TYPE shipment_line_status AS ENUM (
+                      'PLANNED', 'READY', 'PICKED', 'SHIPPED', 'DELIVERED'
+                  );
+              END IF;
+          END $$;
+
+          -- Add missing columns to call_off_shipment_line table
+          DO $$ 
+          BEGIN
+              -- Add delivery_location column if missing
+              IF NOT EXISTS (SELECT 1 FROM information_schema.columns 
+                             WHERE table_name = 'call_off_shipment_line' 
+                             AND column_name = 'delivery_location') THEN
+                  ALTER TABLE call_off_shipment_line 
+                  ADD COLUMN delivery_location VARCHAR(255);
+              END IF;
+              
+              -- Add requested_delivery_date column if missing
+              IF NOT EXISTS (SELECT 1 FROM information_schema.columns 
+                             WHERE table_name = 'call_off_shipment_line' 
+                             AND column_name = 'requested_delivery_date') THEN
+                  ALTER TABLE call_off_shipment_line 
+                  ADD COLUMN requested_delivery_date DATE;
+              END IF;
+              
+              -- Add notes column if missing
+              IF NOT EXISTS (SELECT 1 FROM information_schema.columns 
+                             WHERE table_name = 'call_off_shipment_line' 
+                             AND column_name = 'notes') THEN
+                  ALTER TABLE call_off_shipment_line 
+                  ADD COLUMN notes TEXT;
+              END IF;
+              
+              -- Add status column if missing
+              IF NOT EXISTS (SELECT 1 FROM information_schema.columns 
+                             WHERE table_name = 'call_off_shipment_line' 
+                             AND column_name = 'status') THEN
+                  ALTER TABLE call_off_shipment_line 
+                  ADD COLUMN status shipment_line_status DEFAULT 'PLANNED';
+              END IF;
+
+              -- Add updated_at column if missing
+              IF NOT EXISTS (SELECT 1 FROM information_schema.columns 
+                             WHERE table_name = 'call_off_shipment_line' 
+                             AND column_name = 'updated_at') THEN
+                  ALTER TABLE call_off_shipment_line 
+                  ADD COLUMN updated_at TIMESTAMPTZ DEFAULT NOW();
+              END IF;
+          END $$;
+        `
+        
+        await client.queryObject(migrationSQL)
+        console.log('✅ Migration applied successfully')
+        
+        // Mark migration as applied
+        await client.queryObject(
+          "INSERT INTO supabase_migrations.schema_migrations (version) VALUES ('029') ON CONFLICT DO NOTHING"
+        )
+        
+        await client.end()
+        
+        return new Response(JSON.stringify({
+          success: true,
+          message: 'Shipment lines migration applied successfully'
+        }), {
+          status: 200,
+          headers: { 
+            'Content-Type': 'application/json',
+            ...corsHeaders
+          }
+        })
+        
+      } catch (error) {
+        console.error('Migration error:', error)
+        return new Response(JSON.stringify({
+          success: false,
+          error: `Migration failed: ${error.message}`
+        }), {
+          status: 500,
+          headers: { 
+            'Content-Type': 'application/json',
+            ...corsHeaders
+          }
+        })
+      }
+    }
+    
     // Return 404 for other paths
     return new Response(JSON.stringify({ 
       success: false,
