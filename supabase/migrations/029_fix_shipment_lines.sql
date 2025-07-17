@@ -1,6 +1,7 @@
 -- Fix shipment lines table to include all required columns
 -- This migration ensures the call_off_shipment_line table has all fields expected by the frontend
 -- Date: 2025-01-15
+-- Note: This migration is designed to work with existing database that has old migrations
 
 BEGIN;
 
