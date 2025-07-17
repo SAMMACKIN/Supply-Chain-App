@@ -1,3 +1,23 @@
+export interface CounterpartyAddress {
+  address_id: string
+  counterparty_id: string
+  address_type: 'BILLING' | 'DELIVERY' | 'BOTH'
+  address_name: string
+  street_address: string
+  city: string
+  state_province?: string
+  postal_code?: string
+  country_code: string
+  contact_name?: string
+  contact_phone?: string
+  contact_email?: string
+  is_default: boolean
+  is_active: boolean
+  notes?: string
+  created_at: string
+  updated_at: string
+}
+
 export interface Counterparty {
   counterparty_id: string
   company_name: string
@@ -5,6 +25,7 @@ export interface Counterparty {
   counterparty_type: 'SUPPLIER' | 'CUSTOMER' | 'BOTH'
   country_code: string
   is_active: boolean
+  addresses?: CounterpartyAddress[]
 }
 
 export interface Quota {
@@ -44,12 +65,14 @@ export interface CallOff {
   incoterm_code: string
   fulfillment_location?: string  // For SELL: where we source the goods from
   delivery_location?: string     // For SELL with delivery incoterms: where we deliver to
+  delivery_address_id?: string   // Reference to selected counterparty address
   status: 'NEW' | 'CONFIRMED' | 'FULFILLED' | 'CANCELLED'
   created_by: string
   created_at: string
   confirmed_at?: string
   cancelled_at?: string
   fulfilled_at?: string
+  delivery_address?: CounterpartyAddress // Joined address details
 }
 
 export interface CreateCallOffRequest {
@@ -58,6 +81,7 @@ export interface CreateCallOffRequest {
   requested_delivery_date?: string
   fulfillment_location?: string
   delivery_location?: string
+  delivery_address_id?: string
 }
 
 export interface CreateCallOffResponse {

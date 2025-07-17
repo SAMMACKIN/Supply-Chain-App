@@ -33,13 +33,27 @@ jobs:
           echo "📋 Current migration status:"
           supabase migration list --db-url "${{ secrets.SUPABASE_DEV_DB_URL }}" || echo "Could not list migrations"
           
-          # Deploy database migrations (skip on prepared statement error)
+          # Deploy database migrations
           echo "🗄️ Applying database migrations..."
-          if ! supabase db push --db-url "${{ secrets.SUPABASE_DEV_DB_URL }}"; then
-            echo "⚠️ Migration failed - checking if it's a prepared statement error"
-            # For now, we'll continue even if migrations fail due to pooler issues
-            # The migration can be applied manually via Supabase SQL editor
-            echo "⚠️ Skipping migration error - please apply migration 029 manually if needed"
+          
+          # Check if we have a direct DB URL (non-pooler)
+          if [[ "${{ secrets.SUPABASE_DEV_DB_URL }}" == *"pooler"* ]]; then
+            echo "⚠️ WARNING: Using pooler URL for migrations. This may cause issues."
+            echo "Consider adding SUPABASE_DEV_DIRECT_URL secret with direct database URL."
+          fi
+          
+          # Try to use direct URL if available, otherwise fall back to regular URL
+          DB_URL="${{ secrets.SUPABASE_DEV_DIRECT_URL || secrets.SUPABASE_DEV_DB_URL }}"
+          
+          if ! supabase db push --db-url "$DB_URL"; then
+            echo "⚠️ Migration failed! Error details above."
+            echo "This often happens with pooler connections."
+            echo "Please either:"
+            echo "1. Add SUPABASE_DEV_DIRECT_URL secret with direct DB connection"
+            echo "2. Run migrations manually in Supabase SQL Editor"
+            echo "Continuing deployment without migrations..."
+          else
+            echo "✅ Migrations applied successfully!"
           fi
           
           echo "✅ Database migrations applied successfully!"
@@ -79,7 +93,17 @@ jobs:
           
           # Deploy database migrations (fail on error)
           echo "🗄️ Applying database migrations..."
-          if ! supabase db push --db-url "${{ secrets.SUPABASE_DB_URL }}"; then
+          
+          # Check if we have a direct DB URL (non-pooler)
+          if [[ "${{ secrets.SUPABASE_DB_URL }}" == *"pooler"* ]]; then
+            echo "⚠️ WARNING: Using pooler URL for migrations. This may cause issues."
+            echo "Consider adding SUPABASE_DIRECT_URL secret with direct database URL."
+          fi
+          
+          # Try to use direct URL if available, otherwise fall back to regular URL
+          DB_URL="${{ secrets.SUPABASE_DIRECT_URL || secrets.SUPABASE_DB_URL }}"
+          
+          if ! supabase db push --db-url "$DB_URL"; then
             echo "❌ Migration failed! Check the migration files for errors."
             echo "Hint: The error above shows which migration failed."
             echo "⚠️  IMPORTANT: Production deployment stopped to prevent issues."

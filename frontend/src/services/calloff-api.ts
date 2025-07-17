@@ -1,5 +1,67 @@
 import { supabase, supabaseConfig } from '../lib/supabase'
-import type { Quota, QuotaBalance, CallOff, CreateCallOffRequest, Counterparty } from '../types/calloff'
+import type { Quota, QuotaBalance, CallOff, CreateCallOffRequest, Counterparty, CounterpartyAddress } from '../types/calloff'
+
+export async function fetchCounterpartyAddresses(counterpartyId: string): Promise<CounterpartyAddress[]> {
+  const isDevMode = import.meta.env.VITE_DEV_MODE === 'true'
+  
+  if (isDevMode) {
+    // Return mock addresses for development
+    return [
+      {
+        address_id: 'mock-addr-1',
+        counterparty_id: counterpartyId,
+        address_type: 'DELIVERY',
+        address_name: 'Main Warehouse',
+        street_address: '123 Industrial Way',
+        city: 'Hamburg',
+        state_province: 'Hamburg',
+        postal_code: '20095',
+        country_code: 'DE',
+        contact_name: 'John Doe',
+        contact_phone: '+49 40 123456',
+        contact_email: 'warehouse@example.com',
+        is_default: true,
+        is_active: true,
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString()
+      },
+      {
+        address_id: 'mock-addr-2',
+        counterparty_id: counterpartyId,
+        address_type: 'DELIVERY',
+        address_name: 'Port Office',
+        street_address: '456 Harbor Blvd',
+        city: 'Rotterdam',
+        postal_code: '3011',
+        country_code: 'NL',
+        is_default: false,
+        is_active: true,
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString()
+      }
+    ]
+  }
+
+  try {
+    const { data, error } = await supabase
+      .from('counterparty_addresses')
+      .select('*')
+      .eq('counterparty_id', counterpartyId)
+      .eq('is_active', true)
+      .order('is_default', { ascending: false })
+      .order('address_name')
+
+    if (error) {
+      console.error('Error fetching addresses:', error)
+      return []
+    }
+
+    return data || []
+  } catch (error) {
+    console.error('Failed to fetch counterparty addresses:', error)
+    return []
+  }
+}
 
 export async function fetchCounterparties(): Promise<Counterparty[]> {
   const isDevMode = import.meta.env.VITE_DEV_MODE === 'true'

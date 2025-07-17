@@ -118,22 +118,6 @@ export function CallOffList({ onCreateCallOff, onViewCallOff, onEditCallOff }: C
 
   return (
     <Box>
-      {/* Header */}
-      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
-        <Typography variant="h4" sx={{ fontWeight: 600 }}>
-          Call-Offs
-        </Typography>
-        {onCreateCallOff && (
-          <Button
-            variant="contained"
-            startIcon={<AddIcon />}
-            onClick={onCreateCallOff}
-            sx={{ borderRadius: 2 }}
-          >
-            Create Call-Off
-          </Button>
-        )}
-      </Box>
 
       {/* Summary Stats */}
       <Box sx={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: 2, mb: 3 }}>
