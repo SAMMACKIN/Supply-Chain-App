@@ -96,6 +96,8 @@ export function AuthProvider({ children }: AuthProviderProps) {
 
   // Initialize auth state
   useEffect(() => {
+    let loadingTimeout: NodeJS.Timeout
+    
     // Initialize session sync
     sessionSync.init(() => {
       // Another tab cleared the session
@@ -106,8 +108,16 @@ export function AuthProvider({ children }: AuthProviderProps) {
     // Clean up any corrupted sessions first
     cleanupSessionStorage()
     
+    // Set a timeout to prevent infinite loading
+    loadingTimeout = setTimeout(() => {
+      console.warn('Auth loading timeout - forcing completion')
+      setLoading(false)
+    }, 5000) // 5 second timeout
+    
     // Get initial session
     supabase.auth.getSession().then(({ data: { session }, error }) => {
+      clearTimeout(loadingTimeout)
+      
       if (error) {
         console.error('Error getting session:', error)
         // If there's an error getting the session, try to recover by signing out
@@ -132,16 +142,22 @@ export function AuthProvider({ children }: AuthProviderProps) {
         console.log('Token refresh failed, clearing session...')
         await supabase.auth.signOut()
         sessionSync.notifySessionCleared()
+        setLoading(false)
       } else if (event === 'SIGNED_IN') {
         sessionSync.notifySessionUpdated()
+        await handleSession(session)
+        setLoading(false)
       } else if (event === 'SIGNED_OUT') {
         sessionSync.notifySessionCleared()
+        setUser(null)
+        setLoading(false)
+      } else if (event === 'USER_UPDATED') {
+        await handleSession(session)
       }
-      
-      await handleSession(session)
     })
 
     return () => {
+      clearTimeout(loadingTimeout)
       subscription.unsubscribe()
       sessionSync.cleanup()
     }
