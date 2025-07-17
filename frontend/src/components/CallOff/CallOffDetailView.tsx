@@ -28,6 +28,7 @@ import {
 import { fetchQuotaBalance, fetchAvailableQuotas } from '../../services/calloff-api'
 import { ShipmentLineList } from './ShipmentLineList'
 import type { CallOff } from '../../types/calloff'
+import { supabase } from '../../lib/supabase'
 
 interface CallOffDetailViewProps {
   callOff: CallOff
@@ -60,7 +61,31 @@ export function CallOffDetailView({ callOff, open, onClose, onEdit }: CallOffDet
     staleTime: 60 * 1000, // 60 seconds
   })
 
-  const quota = quotas?.find(q => q.quota_id === callOff.quota_id)
+  // Also try to get the specific quota if not found in the list
+  const { data: singleQuota } = useQuery({
+    queryKey: ['quota', callOff.quota_id],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('quota')
+        .select('*, counterparty:counterparty_id(company_name, company_code)')
+        .eq('quota_id', callOff.quota_id)
+        .single()
+      
+      if (error) throw error
+      return data
+    },
+    enabled: open && !!callOff.quota_id && !quotas?.find(q => q.quota_id === callOff.quota_id),
+    staleTime: 60 * 1000,
+  })
+
+  const quota = quotas?.find(q => q.quota_id === callOff.quota_id) || singleQuota
+  
+  // Debug logging
+  if (quotas && callOff.quota_id) {
+    console.log('Looking for quota:', callOff.quota_id)
+    console.log('Available quotas:', quotas.map(q => ({ id: q.quota_id, metal: q.metal_code })))
+    console.log('Found quota:', quota)
+  }
 
 
   // Log errors for debugging

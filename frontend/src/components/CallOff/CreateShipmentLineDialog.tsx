@@ -76,15 +76,15 @@ export function CreateShipmentLineDialog({ callOff, open, onClose }: CreateShipm
             <CloseIcon />
           </IconButton>
         </Box>
-        <Typography variant="body2" color="text.secondary">
-          Split call-off {callOff.call_off_number} into shipment lines
+        <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
+          Create shipment lines for {callOff.call_off_number}
         </Typography>
       </DialogTitle>
 
-      <DialogContent sx={{ pt: 2 }}>
+      <DialogContent sx={{ pt: 3 }}>
         <form onSubmit={handleSubmit(onSubmit)} id="shipment-line-form">
           <Stack spacing={3}>
-            <Box sx={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 3 }}>
+            <Box sx={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 3, mt: 1 }}>
               <TextField
                 fullWidth
                 type="number"
