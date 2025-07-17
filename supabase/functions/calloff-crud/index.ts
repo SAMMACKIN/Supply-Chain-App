@@ -374,15 +374,17 @@ serve(async (req) => {
     if (isCallOffUpdatePath && req.method === 'PATCH') {
       console.log('Updating call-off')
       
-      const callOffId = pathParts[2]
+      const callOffId = pathParts.length === 2 ? pathParts[1] : pathParts[2]
       
       const body = await req.json()
       console.log('Call-off update request:', body)
       
-      // Simple direct update
+      // Build update data from request
       const updateData: any = {}
       if (body.bundle_qty !== undefined) updateData.bundle_qty = body.bundle_qty
       if (body.requested_delivery_date !== undefined) updateData.requested_delivery_date = body.requested_delivery_date
+      if (body.fulfillment_location !== undefined) updateData.fulfillment_location = body.fulfillment_location
+      if (body.delivery_location !== undefined) updateData.delivery_location = body.delivery_location
       
       const { data, error } = await supabase
         .from('call_off')
@@ -670,6 +672,7 @@ serve(async (req) => {
       console.log('Fetching shipment lines for call-off')
       
       const callOffId = pathParts[2]
+      console.log('Call-off ID:', callOffId)
       
       const { data, error } = await supabase
         .from('call_off_shipment_line')
@@ -695,7 +698,12 @@ serve(async (req) => {
         console.error('Database error fetching shipment lines:', error)
         return new Response(JSON.stringify({
           success: false,
-          error: `Failed to fetch shipment lines: ${error.message}`
+          error: `Failed to fetch shipment lines: ${error.message}`,
+          details: {
+            callOffId,
+            errorCode: error.code,
+            errorDetails: error.details
+          }
         }), {
           status: 500,
           headers: { 

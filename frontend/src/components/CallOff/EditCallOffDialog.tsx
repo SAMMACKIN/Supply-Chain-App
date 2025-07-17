@@ -37,7 +37,9 @@ export function EditCallOffDialog({ callOff, open, onClose }: EditCallOffDialogP
   } = useForm<CreateCallOffRequest>({
     defaultValues: {
       bundle_qty: callOff.bundle_qty,
-      requested_delivery_date: callOff.requested_delivery_date || ''
+      requested_delivery_date: callOff.requested_delivery_date || '',
+      fulfillment_location: callOff.fulfillment_location || '',
+      delivery_location: callOff.delivery_location || ''
     }
   })
 
@@ -45,7 +47,9 @@ export function EditCallOffDialog({ callOff, open, onClose }: EditCallOffDialogP
     if (open) {
       reset({
         bundle_qty: callOff.bundle_qty,
-        requested_delivery_date: callOff.requested_delivery_date || ''
+        requested_delivery_date: callOff.requested_delivery_date || '',
+        fulfillment_location: callOff.fulfillment_location || '',
+        delivery_location: callOff.delivery_location || ''
       })
     }
   }, [open, callOff, reset])
@@ -110,8 +114,25 @@ export function EditCallOffDialog({ callOff, open, onClose }: EditCallOffDialogP
                 inputProps={{ min: new Date().toISOString().split('T')[0] }}
               />
 
+              {callOff.direction === 'SELL' && (
+                <>
+                  <TextField
+                    fullWidth
+                    label="Fulfillment Location"
+                    {...register('fulfillment_location')}
+                    placeholder="Warehouse or storage location"
+                  />
+                  <TextField
+                    fullWidth
+                    label="Delivery Location"
+                    {...register('delivery_location')}
+                    placeholder="Customer delivery address"
+                  />
+                </>
+              )}
+
               <Alert severity="info">
-                Call-off is against {callOff.direction} quota. Other details like counterparty and incoterm cannot be changed after creation.
+                Note: Counterparty, quota, and incoterm cannot be changed after creation.
               </Alert>
           </Stack>
         </form>

@@ -78,6 +78,21 @@ export function ConsolidatedView() {
     return allCallOffs?.filter(co => co.quota_id === quotaId) || []
   }
 
+  const getTotalTonnageForCounterparty = (counterpartyId: string) => {
+    if (!quotas) return 0
+    return quotas.reduce((total, quota) => total + quota.qty_t, 0)
+  }
+
+  const getUtilizedTonnageForCounterparty = (counterpartyId: string) => {
+    if (!quotas || !allCallOffs) return 0
+    const quotaIds = quotas.map(q => q.quota_id)
+    const relevantCallOffs = allCallOffs.filter(co => 
+      quotaIds.includes(co.quota_id) && 
+      ['CONFIRMED', 'FULFILLED'].includes(co.status)
+    )
+    return relevantCallOffs.reduce((total, co) => total + co.bundle_qty, 0)
+  }
+
   const getStatusColor = (status: string) => {
     switch (status) {
       case 'NEW': return 'info'
@@ -150,6 +165,16 @@ export function ConsolidatedView() {
                   {counterparty.company_code} • {counterparty.country_code}
                 </Typography>
               </Box>
+              {expandedCounterparty === counterparty.counterparty_id && quotas && (
+                <Box sx={{ textAlign: 'right', mr: 2 }}>
+                  <Typography variant="body2" color="text.secondary">
+                    Total: {getTotalTonnageForCounterparty(counterparty.counterparty_id).toLocaleString()}t
+                  </Typography>
+                  <Typography variant="body2" color="primary">
+                    Used: {getUtilizedTonnageForCounterparty(counterparty.counterparty_id).toLocaleString()}t
+                  </Typography>
+                </Box>
+              )}
               <Chip
                 label={counterparty.counterparty_type}
                 size="small"

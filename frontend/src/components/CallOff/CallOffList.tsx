@@ -123,14 +123,16 @@ export function CallOffList({ onCreateCallOff, onViewCallOff, onEditCallOff }: C
         <Typography variant="h4" sx={{ fontWeight: 600 }}>
           Call-Offs
         </Typography>
-        <Button
-          variant="contained"
-          startIcon={<AddIcon />}
-          onClick={onCreateCallOff}
-          sx={{ borderRadius: 2 }}
-        >
-          Create Call-Off
-        </Button>
+        {onCreateCallOff && (
+          <Button
+            variant="contained"
+            startIcon={<AddIcon />}
+            onClick={onCreateCallOff}
+            sx={{ borderRadius: 2 }}
+          >
+            Create Call-Off
+          </Button>
+        )}
       </Box>
 
       {/* Summary Stats */}
