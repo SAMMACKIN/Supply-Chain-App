@@ -43,7 +43,23 @@ jobs:
           fi
           
           # Try to use direct URL if available, otherwise fall back to regular URL
-          DB_URL="${{ secrets.SUPABASE_DEV_DIRECT_URL || secrets.SUPABASE_DEV_DB_URL }}"
+          DB_URL="${{ secrets.SUPABASE_DEV_DB_URL }}"
+          
+          # Check if we have a direct URL and test connectivity
+          if [ -n "${{ secrets.SUPABASE_DEV_DIRECT_URL }}" ]; then
+            echo "Testing direct database connection..."
+            # Extract host from direct URL
+            DB_HOST=$(echo "${{ secrets.SUPABASE_DEV_DIRECT_URL }}" | sed -E 's|postgresql://[^@]+@([^/:]+).*|\1|')
+            
+            # Test if we can reach the database host
+            if nc -zv -w5 $DB_HOST 5432 2>/dev/null; then
+              echo "✅ Direct connection available, using direct URL"
+              DB_URL="${{ secrets.SUPABASE_DEV_DIRECT_URL }}"
+            else
+              echo "⚠️ Cannot reach direct database host, falling back to pooler URL"
+              DB_URL="${{ secrets.SUPABASE_DEV_DB_URL }}"
+            fi
+          fi
           
           # First, try to apply migrations
           if ! supabase db push --db-url "$DB_URL"; then
