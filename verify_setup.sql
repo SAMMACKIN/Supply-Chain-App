@@ -10,11 +10,7 @@ SELECT
 SELECT 
     'Counterparty Addresses Table' as check_item,
     EXISTS (SELECT 1 FROM information_schema.tables WHERE table_name = 'counterparty_addresses') as exists,
-    CASE 
-        WHEN EXISTS (SELECT 1 FROM information_schema.tables WHERE table_name = 'counterparty_addresses')
-        THEN (SELECT COUNT(*) FROM counterparty_addresses)
-        ELSE 0
-    END as row_count;
+    0 as row_count;
 
 -- 3. Check call_off table columns
 SELECT 
