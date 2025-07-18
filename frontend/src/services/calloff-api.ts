@@ -605,12 +605,25 @@ export async function createShipmentLine(callOffId: string, shipmentLineData: Cr
 
   console.log('Creating shipment line:', { callOffId, shipmentLineData })
   
+  // Get auth token for debugging
+  const { data: { session } } = await supabase.auth.getSession()
+  console.log('Auth token present:', !!session?.access_token)
+  
   const { data, error } = await supabase.functions.invoke(`calloff-crud/call-offs/${callOffId}/shipment-lines`, {
     method: 'POST',
     body: shipmentLineData
   })
 
   console.log('Shipment line response:', { data, error })
+  
+  // If error, try to parse the response
+  if (error && error instanceof Error) {
+    console.error('Edge function error:', error)
+    // Try to get more details from the error
+    if ('context' in error) {
+      console.error('Error context:', (error as any).context)
+    }
+  }
 
   if (error) {
     throw new Error(`Failed to create shipment line: ${error.message}`)

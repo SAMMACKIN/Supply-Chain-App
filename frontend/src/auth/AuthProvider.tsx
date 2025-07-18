@@ -40,6 +40,39 @@ export function AuthProvider({ children }: AuthProviderProps) {
 
       if (error) {
         console.error('Error fetching user profile:', error)
+        
+        // If profile doesn't exist, try to create it
+        if (error.code === 'PGRST116') {
+          console.log('Profile not found, attempting to create...')
+          
+          // Get user email from auth
+          const { data: { user } } = await supabase.auth.getUser()
+          if (user) {
+            const { data: newProfile, error: createError } = await supabase
+              .from('user_profiles')
+              .insert({
+                user_id: userId,
+                email: user.email,
+                display_name: user.email?.split('@')[0] || 'User',
+                role: 'OPS', // Default role
+                business_unit: 'BU001',
+                warehouse_ids: [],
+                created_at: new Date().toISOString(),
+                updated_at: new Date().toISOString()
+              })
+              .select()
+              .single()
+            
+            if (createError) {
+              console.error('Failed to create profile:', createError)
+              return null
+            }
+            
+            console.log('Profile created successfully')
+            return newProfile
+          }
+        }
+        
         return null
       }
 
