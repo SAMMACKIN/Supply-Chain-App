@@ -819,29 +819,61 @@ serve(async (req) => {
         })
       }
       
+      // Log the insert data for debugging
+      const insertData = {
+        call_off_id: callOffId,
+        bundle_qty: body.bundle_qty,
+        metal_code: body.metal_code,
+        destination_party_id: body.destination_party_id || null,
+        expected_ship_date: body.expected_ship_date || null,
+        delivery_location: body.delivery_location || null,
+        requested_delivery_date: body.requested_delivery_date || null,
+        notes: body.notes || null,
+        status: 'PLANNED'
+      }
+      
+      console.log('Inserting shipment line with data:', JSON.stringify(insertData))
+
       const { data, error } = await supabase
         .from('call_off_shipment_line')
-        .insert({
-          call_off_id: callOffId,
-          bundle_qty: body.bundle_qty,
-          metal_code: body.metal_code,
-          destination_party_id: body.destination_party_id || null,
-          expected_ship_date: body.expected_ship_date || null,
-          delivery_location: body.delivery_location || null,
-          requested_delivery_date: body.requested_delivery_date || null,
-          notes: body.notes || null,
-          status: 'PLANNED'
-        })
+        .insert(insertData)
         .select()
         .single()
       
       if (error) {
         console.error('Database error creating shipment line:', error)
+        console.error('Error details:', {
+          code: error.code,
+          details: error.details,
+          hint: error.hint,
+          message: error.message
+        })
+        
+        // Return more specific error based on error code
+        let statusCode = 500
+        let errorMessage = `Failed to create shipment line: ${error.message}`
+        
+        if (error.code === '23502') { // not-null violation
+          statusCode = 400
+          errorMessage = `Missing required field: ${error.message}`
+        } else if (error.code === '23503') { // foreign key violation
+          statusCode = 400
+          errorMessage = `Invalid reference: ${error.message}`
+        } else if (error.code === '42P01') { // table doesn't exist
+          statusCode = 500
+          errorMessage = 'Shipment line table not found. Please run migrations.'
+        }
+        
         return new Response(JSON.stringify({
           success: false,
-          error: `Failed to create shipment line: ${error.message}`
+          error: errorMessage,
+          details: {
+            code: error.code,
+            hint: error.hint,
+            insertData: insertData
+          }
         }), {
-          status: 500,
+          status: statusCode,
           headers: { 
             'Content-Type': 'application/json',
             ...corsHeaders
