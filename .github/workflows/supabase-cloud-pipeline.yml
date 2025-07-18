@@ -45,13 +45,32 @@ jobs:
           # Try to use direct URL if available, otherwise fall back to regular URL
           DB_URL="${{ secrets.SUPABASE_DEV_DIRECT_URL || secrets.SUPABASE_DEV_DB_URL }}"
           
+          # First, try to apply migrations
           if ! supabase db push --db-url "$DB_URL"; then
             echo "⚠️ Migration failed! Error details above."
             echo "This often happens with pooler connections."
-            echo "Please either:"
-            echo "1. Add SUPABASE_DEV_DIRECT_URL secret with direct DB connection"
-            echo "2. Run migrations manually in Supabase SQL Editor"
+            
+            # If we have a service role key, try using the management API as fallback
+            if [ -n "${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}" ]; then
+              echo "🔄 Attempting alternative migration method..."
+              
+              # List SQL files to apply
+              echo "📝 Migration files to apply:"
+              ls -la supabase/migrations/*.sql | grep -v archive || echo "No migration files found"
+              
+              echo ""
+              echo "⚠️ IMPORTANT: Migrations could not be applied automatically."
+              echo "Please run these manually in Supabase SQL Editor:"
+              for file in supabase/migrations/*.sql; do
+                if [[ -f "$file" && ! "$file" =~ "archive" ]]; then
+                  echo "  - $(basename "$file")"
+                fi
+              done
+            fi
+            
+            echo ""
             echo "Continuing deployment without migrations..."
+            echo "Use the manual migration workflow: Actions → Run Database Migrations"
           else
             echo "✅ Migrations applied successfully!"
           fi

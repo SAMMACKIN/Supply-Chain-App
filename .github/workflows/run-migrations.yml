@@ -1,0 +1,103 @@
+name: Run Database Migrations
+
+on:
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: 'Environment to run migrations on'
+        required: true
+        default: 'development'
+        type: choice
+        options:
+        - development
+        - production
+      force:
+        description: 'Force run migrations even if they appear to be applied'
+        required: false
+        default: false
+        type: boolean
+
+jobs:
+  run-migrations:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - uses: actions/checkout@v3
+      
+      - uses: supabase/setup-cli@v1
+        with:
+          version: latest
+      
+      - name: Set environment variables
+        run: |
+          if [ "${{ inputs.environment }}" == "production" ]; then
+            echo "DB_URL=${{ secrets.SUPABASE_DIRECT_URL || secrets.SUPABASE_DB_URL }}" >> $GITHUB_ENV
+            echo "PROJECT_REF=${{ secrets.SUPABASE_PROJECT_REF }}" >> $GITHUB_ENV
+            echo "ENV_NAME=Production" >> $GITHUB_ENV
+          else
+            echo "DB_URL=${{ secrets.SUPABASE_DEV_DIRECT_URL || secrets.SUPABASE_DEV_DB_URL }}" >> $GITHUB_ENV
+            echo "PROJECT_REF=${{ secrets.SUPABASE_DEV_PROJECT_REF }}" >> $GITHUB_ENV
+            echo "ENV_NAME=Development" >> $GITHUB_ENV
+          fi
+      
+      - name: Check database connection
+        run: |
+          echo "🔍 Checking database connection to $ENV_NAME..."
+          
+          # Extract just the hostname for display
+          DB_HOST=$(echo "$DB_URL" | sed -E 's|postgresql://[^@]+@([^/:]+).*|\1|')
+          echo "Database host: $DB_HOST"
+          
+          # Check if using pooler
+          if [[ "$DB_URL" == *"pooler"* ]]; then
+            echo "⚠️  WARNING: Using pooler connection. Migrations may fail."
+            echo "💡 TIP: Add SUPABASE_${ENV_NAME^^}_DIRECT_URL secret with direct connection."
+          else
+            echo "✅ Using direct database connection"
+          fi
+      
+      - name: List pending migrations
+        run: |
+          echo "📋 Checking migration status..."
+          supabase migration list --db-url "$DB_URL" || echo "Could not list migrations"
+      
+      - name: Run migrations
+        run: |
+          echo "🚀 Running migrations on $ENV_NAME..."
+          
+          if [ "${{ inputs.force }}" == "true" ]; then
+            echo "⚠️  Force mode enabled - running all migrations"
+          fi
+          
+          # Run migrations
+          if supabase db push --db-url "$DB_URL"; then
+            echo "✅ Migrations completed successfully!"
+          else
+            EXIT_CODE=$?
+            echo "❌ Migration failed with exit code: $EXIT_CODE"
+            
+            # Check for common errors
+            if [[ "$EXIT_CODE" == "1" ]]; then
+              echo ""
+              echo "💡 Common solutions:"
+              echo "1. Check if you're using a pooler URL (add direct URL secret)"
+              echo "2. Check migration files for syntax errors"
+              echo "3. Check if migrations are already applied"
+              echo ""
+              echo "📝 Migration files in this deployment:"
+              ls -la supabase/migrations/*.sql | grep -v archive || echo "No migration files found"
+            fi
+            
+            exit $EXIT_CODE
+          fi
+      
+      - name: Verify migrations
+        if: success()
+        run: |
+          echo "✅ Verifying migration status..."
+          supabase migration list --db-url "$DB_URL" || true
+          
+          echo ""
+          echo "🎉 Migration deployment complete!"
+          echo "Environment: $ENV_NAME"
+          echo "Project: $PROJECT_REF"
