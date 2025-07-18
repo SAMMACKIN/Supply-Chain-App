@@ -603,17 +603,24 @@ export async function createShipmentLine(callOffId: string, shipmentLineData: Cr
     return newShipmentLine
   }
 
+  console.log('Creating shipment line:', { callOffId, shipmentLineData })
+  
   const { data, error } = await supabase.functions.invoke(`calloff-crud/call-offs/${callOffId}/shipment-lines`, {
     method: 'POST',
     body: shipmentLineData
   })
+
+  console.log('Shipment line response:', { data, error })
 
   if (error) {
     throw new Error(`Failed to create shipment line: ${error.message}`)
   }
 
   if (!data.success) {
-    throw new Error(data.error || 'Failed to create shipment line')
+    console.error('Shipment line creation failed:', data)
+    // Include more details in the error message
+    const errorDetails = data.details ? ` (${JSON.stringify(data.details)})` : ''
+    throw new Error(data.error || 'Failed to create shipment line' + errorDetails)
   }
 
   return data.data

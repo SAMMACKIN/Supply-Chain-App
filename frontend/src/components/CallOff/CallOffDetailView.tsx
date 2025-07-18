@@ -65,17 +65,27 @@ export function CallOffDetailView({ callOff, open, onClose, onEdit }: CallOffDet
   const { data: singleQuota } = useQuery({
     queryKey: ['quota', callOff.quota_id],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from('quota')
-        .select('*, counterparty:counterparty_id(company_name, company_code)')
-        .eq('quota_id', callOff.quota_id)
-        .single()
-      
-      if (error) throw error
-      return data
+      try {
+        const { data, error } = await supabase
+          .from('quota')
+          .select('*, counterparty:counterparty_id(company_name, company_code)')
+          .eq('quota_id', callOff.quota_id)
+          .single()
+        
+        if (error) {
+          console.error('Error fetching single quota:', error)
+          // Return null instead of throwing to prevent 406 errors
+          return null
+        }
+        return data
+      } catch (err) {
+        console.error('Failed to fetch quota:', err)
+        return null
+      }
     },
     enabled: open && !!callOff.quota_id && !quotas?.find(q => q.quota_id === callOff.quota_id),
     staleTime: 60 * 1000,
+    retry: false, // Don't retry on 406 errors
   })
 
   const quota = quotas?.find(q => q.quota_id === callOff.quota_id) || singleQuota
