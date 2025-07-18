@@ -100,4 +100,4 @@ jobs:
           echo ""
           echo "🎉 Migration deployment complete!"
           echo "Environment: $ENV_NAME"
-          echo "Project: $PROJECT_REF"
+          echo "Project: $PROJECT_REF" 
