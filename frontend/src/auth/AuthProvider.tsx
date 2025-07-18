@@ -48,28 +48,49 @@ export function AuthProvider({ children }: AuthProviderProps) {
           // Get user email from auth
           const { data: { user } } = await supabase.auth.getUser()
           if (user) {
-            const { data: newProfile, error: createError } = await supabase
-              .from('user_profiles')
-              .insert({
-                user_id: userId,
-                email: user.email,
-                display_name: user.email?.split('@')[0] || 'User',
-                role: 'OPS', // Default role
-                business_unit: 'BU001',
-                warehouse_ids: [],
-                created_at: new Date().toISOString(),
-                updated_at: new Date().toISOString()
-              })
-              .select()
-              .single()
-            
-            if (createError) {
-              console.error('Failed to create profile:', createError)
+            try {
+              // First try using the safe RPC function
+              const { data: created, error: rpcError } = await supabase
+                .rpc('create_user_profile_safe', {
+                  p_user_id: userId,
+                  p_email: user.email || ''
+                })
+
+              if (rpcError) {
+                console.error('RPC profile creation failed:', rpcError)
+                
+                // Fallback: Try minimal insert with only user_id
+                // This works regardless of what other columns exist
+                const { data: minimalProfile, error: minimalError } = await supabase
+                  .from('user_profiles')
+                  .insert({ user_id: userId })
+                  .select()
+                  .single()
+                
+                if (minimalError) {
+                  console.error('Minimal profile creation failed:', minimalError)
+                  // Don't throw - let user continue without profile
+                  return null
+                }
+                
+                console.log('Minimal profile created')
+                return minimalProfile
+              }
+              
+              // If RPC succeeded, fetch the created profile
+              const { data: newProfile } = await supabase
+                .from('user_profiles')
+                .select('*')
+                .eq('user_id', userId)
+                .single()
+              
+              console.log('Profile created via RPC')
+              return newProfile || null
+              
+            } catch (err) {
+              console.error('Profile creation error:', err)
               return null
             }
-            
-            console.log('Profile created successfully')
-            return newProfile
           }
         }
         
@@ -252,28 +273,32 @@ export function AuthProvider({ children }: AuthProviderProps) {
 
       console.log('Auth user created:', authData.user.id)
 
-      // Try to create the user profile
+      // Try to create the user profile using the safe function
       // Note: This might fail if email confirmation is required first
       try {
-        const { error: profileError } = await supabase
-          .from('user_profiles')
-          .insert({
-            user_id: authData.user.id,
-            email: data.email,
-            display_name: data.display_name,
-            business_unit: data.business_unit,
-            role: data.role,
-            warehouse_ids: [],
-            created_at: new Date().toISOString(),
-            updated_at: new Date().toISOString()
+        const { error: rpcError } = await supabase
+          .rpc('create_user_profile_safe', {
+            p_user_id: authData.user.id,
+            p_email: data.email
           })
 
-        if (profileError) {
-          console.error('Profile creation error:', profileError)
-          // Don't throw here - the profile might be created by a database trigger after email confirmation
-          console.warn('Profile creation failed, but this might be handled by database triggers after email confirmation')
+        if (rpcError) {
+          console.error('RPC profile creation error:', rpcError)
+          
+          // Fallback: Try minimal insert
+          const { error: minimalError } = await supabase
+            .from('user_profiles')
+            .insert({ user_id: authData.user.id })
+          
+          if (minimalError) {
+            console.error('Minimal profile creation error:', minimalError)
+            // Don't throw - profile might be created by database trigger after email confirmation
+            console.warn('Profile creation failed, but this might be handled by database triggers')
+          } else {
+            console.log('Minimal user profile created during registration')
+          }
         } else {
-          console.log('User profile created successfully')
+          console.log('User profile created via RPC during registration')
         }
       } catch (profileErr) {
         console.error('Profile creation failed:', profileErr)
