@@ -6,6 +6,9 @@ import 'express-async-errors';
 // Load environment variables
 dotenv.config();
 
+// Import database
+import { prisma } from './db/client';
+
 // Import middleware
 import { errorHandler } from './api/middleware/error';
 import { rateLimiter } from './api/middleware/rate-limit';
@@ -43,7 +46,32 @@ app.get('/health', (_req, res) => {
   res.json({ 
     status: 'ok', 
     timestamp: new Date().toISOString(),
-    environment: process.env.NODE_ENV 
+    environment: process.env.NODE_ENV,
+    database: !!prisma ? 'connected' : 'not connected'
+  });
+});
+
+// Mock API endpoint for testing without database
+app.get('/api/quotas/mock', (_req, res) => {
+  res.json({
+    success: true,
+    data: [
+      {
+        quota_id: 'mock-1',
+        counterparty_id: 'mock-cp-1',
+        direction: 'BUY',
+        period_month: '2025-01',
+        bundle_qty: 100,
+        metal_code: 'CU',
+        counterparty: {
+          company_name: 'Mock Supplier',
+          company_code: 'MS001'
+        },
+        used_qty: 20,
+        available_qty: 80
+      }
+    ],
+    count: 1
   });
 });
 
