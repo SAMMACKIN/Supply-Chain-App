@@ -16,9 +16,9 @@ declare global {
 
 // Clerk authentication middleware - DISABLED FOR NOW
 export const requireAuth = (req: Request, _res: Response, next: NextFunction): void => {
-  // Skip auth for development
+  // Skip auth for development - use valid UUID
   req.auth = {
-    userId: 'dev-user-123',
+    userId: '00000000-0000-0000-0000-000000000000',
     sessionId: 'dev-session-123'
   };
   next();
