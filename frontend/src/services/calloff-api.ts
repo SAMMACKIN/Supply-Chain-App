@@ -242,14 +242,10 @@ export async function fetchCallOff(id: string): Promise<CallOff> {
 
 export async function createCallOff(data: CreateCallOffRequest): Promise<CallOff> {
   if (USE_API) {
-    try {
-      return await apiCall<CallOff>('/call-offs', {
-        method: 'POST',
-        body: JSON.stringify(data),
-      })
-    } catch (error) {
-      console.warn('API call failed, creating mock call-off:', error)
-    }
+    return await apiCall<CallOff>('/call-offs', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    })
   }
   
   // Create mock call-off
@@ -329,14 +325,10 @@ export async function fetchShipmentLines(callOffId: string) {
 
 export async function createShipmentLine(callOffId: string, data: any) {
   if (USE_API) {
-    try {
-      return await apiCall(`/call-offs/${callOffId}/shipment-lines`, {
-        method: 'POST',
-        body: JSON.stringify(data),
-      })
-    } catch (error) {
-      console.warn('API call failed, creating mock shipment line:', error)
-    }
+    return await apiCall(`/call-offs/${callOffId}/shipment-lines`, {
+      method: 'POST',
+      body: JSON.stringify(data),
+    })
   }
   
   return {
