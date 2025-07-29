@@ -27,6 +27,7 @@ const PORT = process.env.PORT || 3001;
 console.log('🔧 Starting server initialization...');
 console.log(`🔧 PORT from environment: ${process.env.PORT}`);
 console.log(`🔧 DATABASE_URL exists: ${!!process.env.DATABASE_URL}`);
+console.log(`🔧 NODE_ENV: ${process.env.NODE_ENV}`);
 
 // Security middleware
 app.use(helmet());
@@ -85,10 +86,18 @@ app.use('/api/shipment-lines', shipmentLineRoutes);
 app.use(errorHandler);
 
 // Start server with error handling
-const server = app.listen(PORT, () => {
+const server = app.listen(PORT, async () => {
   console.log(`🚀 Server running on port ${PORT}`);
   console.log(`📚 Environment: ${process.env.NODE_ENV}`);
   console.log(`🔄 Deployment: ${new Date().toISOString()}`);
+  
+  // Test database connection
+  try {
+    await prisma.$connect();
+    console.log('✅ Database connected successfully');
+  } catch (error) {
+    console.error('❌ Database connection failed:', error);
+  }
 });
 
 // Handle server errors
