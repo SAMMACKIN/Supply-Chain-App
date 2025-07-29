@@ -20,8 +20,11 @@ Complete migration from Supabase to Railway/Vercel architecture due to persisten
 - ✅ Database imported to Railway PostgreSQL
 - ✅ Backend API created with Express/Prisma
 - ✅ Railway project configured
-- ⏳ Backend deployment failing - needs root directory fix
-- ⏳ Frontend still using Supabase
+- ✅ Railway.toml added to specify backend directory
+- ✅ GitHub workflow created for automatic deployment
+- ✅ Frontend updated to support Railway API (MuiQuotas.tsx)
+- ⏳ Railway deployment experiencing 502 errors - debugging needed
+- ⏳ Vercel environment variables need to be manually added
 
 ## Technical Implementation
 
@@ -30,13 +33,15 @@ Complete migration from Supabase to Railway/Vercel architecture due to persisten
 - [x] Set up Prisma ORM
 - [x] Create API routes matching Edge Functions
 - [x] Configure Railway deployment
-- [ ] Fix Railway build issues
+- [x] Add railway.toml for build configuration
+- [x] Create GitHub workflow for CI/CD
+- [ ] Fix Railway 502 errors
 - [ ] Verify API endpoints work
 
 ### Phase 2: Frontend Migration
-- [ ] Add VITE_API_URL to Vercel
-- [ ] Update data fetching to use new API
-- [ ] Test with quotas page first
+- [ ] Add VITE_API_URL to Vercel (manual action required)
+- [x] Update data fetching to use new API (lib/api.ts created)
+- [x] Test with quotas page first (MuiQuotas.tsx updated)
 - [ ] Migrate remaining components
 - [ ] Remove Supabase client
 
@@ -53,22 +58,29 @@ Complete migration from Supabase to Railway/Vercel architecture due to persisten
 - [ ] Configure production
 
 ## Current Blockers
-1. Railway deployment - "can't find backend" error
-   - Need to ensure root directory is set to `backend`
-   - May need to check Railway.toml configuration
+1. Railway deployment - 502 Bad Gateway errors
+   - railway.toml has been added with correct build configuration
+   - Deployment is being triggered but app is not responding
+   - Need to check Railway dashboard logs for specific errors
 
 ## Next Immediate Steps
-1. Fix Railway root directory setting
-2. Push change to trigger new deployment
-3. Test health endpoint
-4. Add VITE_API_URL to Vercel
-5. Update one component as proof of concept
+1. Check Railway dashboard for deployment logs
+2. Verify environment variables are set in Railway:
+   - DATABASE_URL (should be auto-linked to Postgres)
+   - NODE_ENV=development
+   - PORT=3001
+   - FRONTEND_URL
+3. Manually add VITE_API_URL to Vercel Preview environment
+4. Once Railway is working, test the full integration flow
 
 ## Files Modified
 - `/backend/*` - New backend application
 - `/frontend/src/lib/api.ts` - API abstraction layer
 - `/frontend/src/services/api-client.ts` - New API client
+- `/frontend/src/pages/MuiQuotas.tsx` - Updated to use new API
 - `/.github/workflows/railway-deploy.yml` - Railway CI/CD
+- `/railway.toml` - Railway build configuration
+- `/VERCEL_ENV_SETUP.md` - Vercel environment setup guide
 - `/CLAUDE.md` - Migration status tracking
 
 ## Testing Requirements
