@@ -11,7 +11,7 @@ router.get('/schema', async (_req, res) => {
       SELECT table_name, column_name, data_type, is_nullable
       FROM information_schema.columns
       WHERE table_schema = 'public'
-      AND table_name IN ('quota', 'call_off', 'counterparty')
+      AND table_name IN ('quota', 'call_off', 'counterparty', 'call_off_shipment_line')
       ORDER BY table_name, ordinal_position
     `;
     
@@ -54,6 +54,14 @@ router.get('/test-queries', async (_req, res) => {
       results.counterpartyCount = counterpartyCount[0]?.count || 0;
     } catch (e) {
       results.counterpartyCount = { error: (e as Error).message };
+    }
+    
+    // Test shipment line query
+    try {
+      const shipmentLineCount: any[] = await prisma.$queryRaw`SELECT COUNT(*)::int as count FROM call_off_shipment_line`;
+      results.shipmentLineCount = shipmentLineCount[0]?.count || 0;
+    } catch (e) {
+      results.shipmentLineCount = { error: (e as Error).message };
     }
     
     res.json({
