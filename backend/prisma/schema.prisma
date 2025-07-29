@@ -105,13 +105,13 @@ model Quota {
   counterparty_id  String   @db.Uuid
   direction        Direction
   metal_code       String   @db.VarChar(12)
-  month            DateTime @db.Date
+  period_month     DateTime @db.Date @map("period_month")
   bundle_qty       Int
   price_per_unit   Decimal? @db.Decimal(18, 4)
   currency_code    String?  @db.Char(3)
   incoterm_code    String   @db.VarChar(3)
   location_code    String   @db.VarChar(50)
-  business_unit    String
+  business_unit    String?
   is_active        Boolean  @default(true)
   created_at       DateTime @default(now())
   updated_at       DateTime @updatedAt
@@ -120,8 +120,8 @@ model Quota {
   counterparty     Counterparty @relation(fields: [counterparty_id], references: [counterparty_id])
   call_offs        CallOff[]
   
-  @@unique([counterparty_id, direction, metal_code, month, incoterm_code, location_code])
-  @@index([direction, month])
+  @@unique([counterparty_id, direction, metal_code, period_month, incoterm_code, location_code])
+  @@index([direction, period_month])
   @@index([metal_code])
   @@index([counterparty_id])
   @@map("quota")
@@ -137,7 +137,7 @@ model CallOff {
   bundle_qty              Int
   status                  CallOffStatus @default(NEW)
   requested_delivery_date DateTime?     @db.Date
-  delivery_address_id     String?       @db.Uuid
+  // delivery_address_id     String?       @db.Uuid // Column doesn't exist in imported DB
   delivery_location       String?
   fulfillment_location    String?
   created_by              String        @db.Uuid
@@ -150,7 +150,7 @@ model CallOff {
   // Relations
   quota                   Quota                @relation(fields: [quota_id], references: [quota_id])
   counterparty            Counterparty         @relation(fields: [counterparty_id], references: [counterparty_id])
-  delivery_address        CounterpartyAddress? @relation(fields: [delivery_address_id], references: [address_id])
+  // delivery_address        CounterpartyAddress? @relation(fields: [delivery_address_id], references: [address_id])
   created_by_user         UserProfile          @relation("created_by", fields: [created_by], references: [user_id])
   shipment_lines          ShipmentLine[]
   

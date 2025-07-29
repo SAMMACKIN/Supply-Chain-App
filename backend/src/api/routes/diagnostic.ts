@@ -34,24 +34,24 @@ router.get('/test-queries', async (_req, res) => {
     
     // Test quota query without month filter
     try {
-      const quotaCount = await prisma.$queryRaw`SELECT COUNT(*) FROM quota`;
-      results.quotaCount = quotaCount;
+      const quotaCount: any[] = await prisma.$queryRaw`SELECT COUNT(*)::int as count FROM quota`;
+      results.quotaCount = quotaCount[0]?.count || 0;
     } catch (e) {
       results.quotaCount = { error: (e as Error).message };
     }
     
     // Test call_off query
     try {
-      const callOffCount = await prisma.$queryRaw`SELECT COUNT(*) FROM call_off`;
-      results.callOffCount = callOffCount;
+      const callOffCount: any[] = await prisma.$queryRaw`SELECT COUNT(*)::int as count FROM call_off`;
+      results.callOffCount = callOffCount[0]?.count || 0;
     } catch (e) {
       results.callOffCount = { error: (e as Error).message };
     }
     
     // Test counterparty query
     try {
-      const counterpartyCount = await prisma.$queryRaw`SELECT COUNT(*) FROM counterparty`;
-      results.counterpartyCount = counterpartyCount;
+      const counterpartyCount: any[] = await prisma.$queryRaw`SELECT COUNT(*)::int as count FROM counterparty`;
+      results.counterpartyCount = counterpartyCount[0]?.count || 0;
     } catch (e) {
       results.counterpartyCount = { error: (e as Error).message };
     }

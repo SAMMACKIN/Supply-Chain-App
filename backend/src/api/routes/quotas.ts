@@ -28,7 +28,7 @@ router.get('/', requireAuth, async (req, res) => {
   if (filters.business_unit) where.business_unit = filters.business_unit;
   if (filters.month) {
     const monthDate = new Date(filters.month);
-    where.month = monthDate;
+    where.period_month = monthDate;
   }
   
   const quotas = await prisma.quota.findMany({
@@ -47,7 +47,7 @@ router.get('/', requireAuth, async (req, res) => {
       },
     },
     orderBy: [
-      { month: 'desc' },
+      { period_month: 'desc' },
       { metal_code: 'asc' },
     ],
   });
