@@ -109,6 +109,59 @@ router.get('/:id', requireAuth, async (req, res): Promise<void> => {
   });
 });
 
+// GET /api/quotas/:id/balance - Get quota balance details
+router.get('/:id/balance', requireAuth, async (req, res): Promise<void> => {
+  const { id } = req.params;
+  
+  const quota = await prisma.quota.findUnique({
+    where: { quota_id: id },
+    include: {
+      counterparty: true,
+      call_offs: {
+        where: {
+          status: { not: 'CANCELLED' as any },
+        },
+      },
+    },
+  });
+  
+  if (!quota) {
+    res.status(404).json({
+      success: false,
+      error: 'Quota not found',
+    });
+    return;
+  }
+  
+  // Calculate balance information
+  const consumedBundles = quota.call_offs.reduce((sum, co) => sum + co.bundle_qty, 0);
+  const remainingQtyTonnes = quota.qty_t - consumedBundles;
+  const utilizationPct = (consumedBundles / quota.qty_t) * 100;
+  const toleranceQty = (quota.qty_t * (quota.tolerance_pct || 0)) / 100;
+  
+  let toleranceStatus: 'WITHIN_LIMITS' | 'OVER_QUOTA' | 'OVER_TOLERANCE' = 'WITHIN_LIMITS';
+  if (consumedBundles > quota.qty_t) {
+    toleranceStatus = consumedBundles > (quota.qty_t + toleranceQty) ? 'OVER_TOLERANCE' : 'OVER_QUOTA';
+  }
+  
+  const balance = {
+    quota_id: quota.quota_id,
+    quota_qty_tonnes: quota.qty_t,
+    consumed_bundles: consumedBundles,
+    pending_bundles: 0, // Could calculate based on NEW/CONFIRMED status
+    remaining_qty_tonnes: remainingQtyTonnes,
+    tolerance_pct: quota.tolerance_pct || 0,
+    utilization_pct: Math.round(utilizationPct * 100) / 100,
+    tolerance_status: toleranceStatus,
+    call_off_count: quota.call_offs.length,
+  };
+  
+  res.json({
+    success: true,
+    data: balance,
+  });
+});
+
 // GET /api/quotas/counterparties - List unique counterparties
 router.get('/filters/counterparties', requireAuth, async (_req, res) => {
   const counterparties = await prisma.counterparty.findMany({
