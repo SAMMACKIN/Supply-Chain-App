@@ -22,7 +22,6 @@ import authRoutes from './api/routes/auth';
 
 const app = express();
 const PORT = parseInt(process.env.PORT || '3001', 10);
-const HOST = '0.0.0.0'; // Bind to all network interfaces
 
 // Log startup
 console.log('🔧 Starting server initialization...');
@@ -42,6 +41,19 @@ app.use(express.urlencoded({ extended: true }));
 
 // Rate limiting
 app.use('/api', rateLimiter);
+
+// Root endpoint
+app.get('/', (_req, res) => {
+  res.json({ 
+    message: 'Supply Chain Backend API',
+    status: 'running',
+    endpoints: {
+      health: '/health',
+      quotas: '/api/quotas',
+      callOffs: '/api/call-offs'
+    }
+  });
+});
 
 // Health check endpoint
 app.get('/health', (_req, res) => {
@@ -87,8 +99,8 @@ app.use('/api/shipment-lines', shipmentLineRoutes);
 app.use(errorHandler);
 
 // Start server with error handling
-const server = app.listen(PORT, HOST, async () => {
-  console.log(`🚀 Server running on ${HOST}:${PORT}`);
+const server = app.listen(PORT, async () => {
+  console.log(`🚀 Server running on port ${PORT}`);
   console.log(`📚 Environment: ${process.env.NODE_ENV}`);
   console.log(`🔄 Deployment: ${new Date().toISOString()}`);
   
