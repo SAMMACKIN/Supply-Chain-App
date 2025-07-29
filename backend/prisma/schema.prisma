@@ -95,7 +95,7 @@ model CounterpartyAddress {
   
   // Relations
   counterparty    Counterparty @relation(fields: [counterparty_id], references: [counterparty_id], onDelete: Cascade)
-  call_offs       CallOff[]
+  // call_offs       CallOff[] // Relation removed due to missing delivery_address_id in CallOff
   
   @@map("counterparty_addresses")
 }
