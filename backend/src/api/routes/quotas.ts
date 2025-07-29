@@ -18,14 +18,12 @@ const quotaFilterSchema = z.object({
 router.get('/', requireAuth, async (req, res) => {
   const filters = quotaFilterSchema.parse(req.query);
   
-  const where: any = {
-    is_active: true,
-  };
+  const where: any = {};
   
   if (filters.direction) where.direction = filters.direction;
   if (filters.metal_code) where.metal_code = filters.metal_code;
   if (filters.counterparty_id) where.counterparty_id = filters.counterparty_id;
-  if (filters.business_unit) where.business_unit = filters.business_unit;
+  if (filters.business_unit) where.business_unit_id = filters.business_unit;
   if (filters.month) {
     const monthDate = new Date(filters.month);
     where.period_month = monthDate;
@@ -68,7 +66,9 @@ router.get('/', requireAuth, async (req, res) => {
       return {
         ...quota,
         used_qty: usedQty._sum.bundle_qty || 0,
-        available_qty: quota.bundle_qty - (usedQty._sum.bundle_qty || 0),
+        available_qty: quota.qty_t - (usedQty._sum.bundle_qty || 0),
+        // Map qty_t to bundle_qty for frontend compatibility
+        bundle_qty: quota.qty_t,
       };
     })
   );
@@ -115,9 +115,7 @@ router.get('/filters/counterparties', requireAuth, async (_req, res) => {
     where: {
       is_active: true,
       quotas: {
-        some: {
-          is_active: true,
-        },
+        some: {}, // Just check if any quotas exist
       },
     },
     select: {

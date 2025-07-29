@@ -105,22 +105,17 @@ model Quota {
   counterparty_id  String   @db.Uuid
   direction        Direction
   metal_code       String   @db.VarChar(12)
-  period_month     DateTime @db.Date @map("period_month")
-  bundle_qty       Int
-  price_per_unit   Decimal? @db.Decimal(18, 4)
-  currency_code    String?  @db.Char(3)
+  period_month     DateTime @db.Date
+  qty_t            Int      @map("qty_t")
+  tolerance_pct    Decimal? @db.Decimal(5, 2)
   incoterm_code    String   @db.VarChar(3)
-  location_code    String   @db.VarChar(50)
-  business_unit    String?
-  is_active        Boolean  @default(true)
+  business_unit_id String?  @map("business_unit_id")
   created_at       DateTime @default(now())
-  updated_at       DateTime @updatedAt
   
   // Relations
   counterparty     Counterparty @relation(fields: [counterparty_id], references: [counterparty_id])
   call_offs        CallOff[]
   
-  @@unique([counterparty_id, direction, metal_code, period_month, incoterm_code, location_code])
   @@index([direction, period_month])
   @@index([metal_code])
   @@index([counterparty_id])
