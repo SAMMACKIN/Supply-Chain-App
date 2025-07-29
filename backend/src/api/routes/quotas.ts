@@ -16,14 +16,6 @@ const quotaFilterSchema = z.object({
 
 // GET /api/quotas - List all quotas with filters
 router.get('/', requireAuth, async (req, res) => {
-  if (!prisma) {
-    return res.status(503).json({
-      success: false,
-      error: 'Database connection not available',
-      data: []
-    });
-  }
-  
   const filters = quotaFilterSchema.parse(req.query);
   
   const where: any = {

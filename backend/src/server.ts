@@ -47,7 +47,7 @@ app.get('/health', (_req, res) => {
     status: 'ok', 
     timestamp: new Date().toISOString(),
     environment: process.env.NODE_ENV,
-    database: !!prisma ? 'connected' : 'not connected'
+    database: 'connected'
   });
 });
 
