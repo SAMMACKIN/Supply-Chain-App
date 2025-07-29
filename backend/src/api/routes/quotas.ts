@@ -56,7 +56,7 @@ router.get('/', requireAuth, async (req, res) => {
       const usedQty = await prisma.callOff.aggregate({
         where: {
           quota_id: quota.quota_id,
-          status: { notIn: ['CANCELLED'] },
+          status: { not: 'CANCELLED' },
         },
         _sum: {
           bundle_qty: true,

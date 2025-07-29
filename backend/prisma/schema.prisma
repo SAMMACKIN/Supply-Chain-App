@@ -130,7 +130,7 @@ model CallOff {
   direction               Direction
   incoterm_code           String        @db.VarChar(3)
   bundle_qty              Int
-  status                  CallOffStatus @default(NEW)
+  status                  String        @default("NEW")
   requested_delivery_date DateTime?     @db.Date
   // delivery_address_id     String?       @db.Uuid // Column doesn't exist in imported DB
   delivery_location       String?
