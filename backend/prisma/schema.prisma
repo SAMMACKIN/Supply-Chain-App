@@ -46,6 +46,16 @@ enum ShipmentLineStatus {
   CANCELLED
 }
 
+enum ShipmentLineStatusEnum {
+  PLANNED
+  READY
+  PICKED
+  SHIPPED
+  DELIVERED
+  
+  @@map("shipment_line_status")
+}
+
 enum AddressType {
   BILLING
   DELIVERY
@@ -177,7 +187,7 @@ model ShipmentLine {
   delivery_location       String?
   requested_delivery_date DateTime?          @db.Date
   notes                   String?
-  status                  ShipmentLineStatus @default(PLANNED)
+  status                  ShipmentLineStatusEnum @default(PLANNED) @map("status")
   created_at              DateTime           @default(now())
   updated_at              DateTime           @updatedAt
   

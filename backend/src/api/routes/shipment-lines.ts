@@ -24,7 +24,7 @@ const updateShipmentLineSchema = z.object({
   delivery_location: z.string().optional(),
   requested_delivery_date: z.string().datetime().optional(),
   notes: z.string().optional(),
-  status: z.enum(['PLANNED', 'IN_TRANSIT', 'DELIVERED', 'CANCELLED']).optional(),
+  status: z.enum(['PLANNED', 'READY', 'PICKED', 'SHIPPED', 'DELIVERED']).optional(),
 });
 
 // GET /api/call-offs/:callOffId/shipment-lines - List shipment lines for a call-off
@@ -93,7 +93,7 @@ router.post('/', requireAuth, async (req, res): Promise<void> => {
       delivery_location: data.delivery_location,
       requested_delivery_date: data.requested_delivery_date ? new Date(data.requested_delivery_date) : undefined,
       notes: data.notes,
-      status: 'PLANNED',
+      status: 'PLANNED' as any, // Prisma enum type
     },
   });
   
