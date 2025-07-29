@@ -6,9 +6,12 @@ We are migrating from Supabase to Railway + Vercel. The following workflows have
 ### Deprecated Files:
 1. **supabase-cloud-pipeline.yml.deprecated** - Was used for Supabase deployments
 2. **run-migrations-supabase.yml.deprecated** - Was used for manual Supabase migrations
+3. **railway-deploy.yml.disabled** - GitHub Actions workflow for Railway (replaced by Railway's native GitHub integration)
 
 ### Active Workflows:
-1. **railway-deploy.yml** - Deploys backend to Railway on push to main/develop
+None - All deployments are handled by platform integrations:
+- Railway: Uses native GitHub integration (configured in Railway dashboard)
+- Vercel: Uses native GitHub integration (automatic)
 
 ## Next Steps:
 - Once Railway migration is complete and stable, these deprecated files can be deleted
