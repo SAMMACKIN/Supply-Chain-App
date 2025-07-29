@@ -20,6 +20,11 @@ import authRoutes from './api/routes/auth';
 const app = express();
 const PORT = process.env.PORT || 3001;
 
+// Log startup
+console.log('🔧 Starting server initialization...');
+console.log(`🔧 PORT from environment: ${process.env.PORT}`);
+console.log(`🔧 DATABASE_URL exists: ${!!process.env.DATABASE_URL}`);
+
 // Security middleware
 app.use(helmet());
 
@@ -51,9 +56,27 @@ app.use('/api/shipment-lines', shipmentLineRoutes);
 // Error handling middleware (must be last)
 app.use(errorHandler);
 
-// Start server
-app.listen(PORT, () => {
+// Start server with error handling
+const server = app.listen(PORT, () => {
   console.log(`🚀 Server running on port ${PORT}`);
   console.log(`📚 Environment: ${process.env.NODE_ENV}`);
   console.log(`🔄 Deployment: ${new Date().toISOString()}`);
+});
+
+// Handle server errors
+server.on('error', (error: any) => {
+  console.error('❌ Server error:', error);
+  if (error.code === 'EADDRINUSE') {
+    console.error(`Port ${PORT} is already in use`);
+  }
+  process.exit(1);
+});
+
+// Graceful shutdown
+process.on('SIGTERM', () => {
+  console.log('SIGTERM received, shutting down gracefully...');
+  server.close(() => {
+    console.log('Server closed');
+    process.exit(0);
+  });
 });
