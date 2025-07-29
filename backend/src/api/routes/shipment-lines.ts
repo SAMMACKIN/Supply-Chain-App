@@ -3,9 +3,8 @@ import { z } from 'zod';
 import { prisma } from '../../db/client';
 import { requireAuth } from '../middleware/auth';
 
-const router = Router({ mergeParams: true }); // mergeParams to access callOffId
+const router = Router({ mergeParams: true });
 
-// Validation schemas
 const createShipmentLineSchema = z.object({
   bundle_qty: z.number().int().min(1).max(10000),
   metal_code: z.string().max(12),
@@ -27,7 +26,6 @@ const updateShipmentLineSchema = z.object({
   status: z.enum(['PLANNED', 'READY', 'PICKED', 'SHIPPED', 'DELIVERED']).optional(),
 });
 
-// GET /api/call-offs/:callOffId/shipment-lines - List shipment lines for a call-off
 router.get('/', requireAuth, async (req, res) => {
   const { callOffId } = req.params;
   
@@ -43,12 +41,10 @@ router.get('/', requireAuth, async (req, res) => {
   });
 });
 
-// POST /api/call-offs/:callOffId/shipment-lines - Create shipment line
 router.post('/', requireAuth, async (req, res): Promise<void> => {
   const { callOffId } = req.params;
   const data = createShipmentLineSchema.parse(req.body);
   
-  // Verify call-off exists and can have shipment lines added
   const callOff = await prisma.callOff.findUnique({
     where: { call_off_id: callOffId },
     include: {
@@ -72,7 +68,6 @@ router.post('/', requireAuth, async (req, res): Promise<void> => {
     return;
   }
   
-  // Check total quantity doesn't exceed call-off quantity
   const currentQty = callOff.shipment_lines.reduce((sum, line) => sum + line.bundle_qty, 0);
   if (currentQty + data.bundle_qty > callOff.bundle_qty) {
     res.status(400).json({
@@ -82,7 +77,6 @@ router.post('/', requireAuth, async (req, res): Promise<void> => {
     return;
   }
   
-  // Create shipment line
   const shipmentLine = await prisma.shipmentLine.create({
     data: {
       call_off_id: callOffId,
@@ -93,7 +87,7 @@ router.post('/', requireAuth, async (req, res): Promise<void> => {
       delivery_location: data.delivery_location,
       requested_delivery_date: data.requested_delivery_date ? new Date(data.requested_delivery_date) : undefined,
       notes: data.notes,
-      status: 'PLANNED' as any, // Prisma enum type
+      status: 'PLANNED' as any,
     },
   });
   
@@ -103,7 +97,6 @@ router.post('/', requireAuth, async (req, res): Promise<void> => {
   });
 });
 
-// PATCH /api/shipment-lines/:id - Update shipment line
 router.patch('/:id', requireAuth, async (req, res) => {
   const { id } = req.params;
   const data = updateShipmentLineSchema.parse(req.body);
@@ -123,11 +116,9 @@ router.patch('/:id', requireAuth, async (req, res) => {
   });
 });
 
-// DELETE /api/shipment-lines/:id - Delete shipment line
 router.delete('/:id', requireAuth, async (req, res): Promise<void> => {
   const { id } = req.params;
   
-  // Check if shipment line can be deleted
   const shipmentLine = await prisma.shipmentLine.findUnique({
     where: { shipment_line_id: id },
     include: {

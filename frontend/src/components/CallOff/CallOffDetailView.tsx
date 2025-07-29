@@ -80,18 +80,6 @@ export function CallOffDetailView({ callOff, open, onClose, onEdit }: CallOffDet
 
   const quota = quotas?.find(q => q.quota_id === callOff.quota_id) || singleQuota
   
-  // Debug logging
-  if (quotas && callOff.quota_id) {
-    console.log('Looking for quota:', callOff.quota_id)
-    console.log('Available quotas:', quotas.map(q => ({ id: q.quota_id, metal: q.metal_code })))
-    console.log('Found quota:', quota)
-  }
-
-
-  // Log errors for debugging
-  if (balanceError) {
-    console.error('Quota balance fetch error:', balanceError)
-  }
 
   const getStatusColor = (status: string) => {
     switch (status) {
@@ -204,27 +192,6 @@ export function CallOffDetailView({ callOff, open, onClose, onEdit }: CallOffDet
                       {formatDate(callOff.requested_delivery_date)}
                     </Typography>
                   </Box>
-                  {/* Location fields for SELL direction */}
-                  {callOff.direction === 'SELL' && (
-                    <>
-                      {callOff.fulfillment_location && (
-                        <Box>
-                          <Typography variant="body2" color="text.secondary">Fulfillment Location</Typography>
-                          <Typography variant="body1" sx={{ fontWeight: 500 }}>
-                            {callOff.fulfillment_location}
-                          </Typography>
-                        </Box>
-                      )}
-                      {callOff.delivery_location && (
-                        <Box>
-                          <Typography variant="body2" color="text.secondary">Delivery Location</Typography>
-                          <Typography variant="body1" sx={{ fontWeight: 500 }}>
-                            {callOff.delivery_location}
-                          </Typography>
-                        </Box>
-                      )}
-                    </>
-                  )}
                 </Box>
               </CardContent>
             </Card>

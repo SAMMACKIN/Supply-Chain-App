@@ -258,8 +258,6 @@ export async function createCallOff(data: CreateCallOffRequest): Promise<CallOff
     status: 'NEW',
     bundle_qty: data.bundle_qty,
     incoterm_code: 'DAP',
-    delivery_location: data.delivery_location,
-    fulfillment_location: data.fulfillment_location,
     requested_delivery_date: data.requested_delivery_date,
     created_at: new Date().toISOString(),
     updated_at: new Date().toISOString(),

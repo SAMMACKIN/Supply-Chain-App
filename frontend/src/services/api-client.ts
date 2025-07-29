@@ -1,4 +1,3 @@
-// New API client to replace Supabase
 
 const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001/api';
 
@@ -70,8 +69,6 @@ export const api = {
       bundle_qty: number;
       requested_delivery_date?: string;
       delivery_address_id?: string;
-      delivery_location?: string;
-      fulfillment_location?: string;
     }) => fetchWithAuth('/call-offs', {
       method: 'POST',
       body: JSON.stringify(data),
@@ -124,7 +121,6 @@ export const api = {
   },
 };
 
-// React Query hooks example
 export const queryKeys = {
   quotas: {
     all: ['quotas'] as const,

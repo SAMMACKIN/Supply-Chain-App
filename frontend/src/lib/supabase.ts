@@ -1,7 +1,5 @@
-// Supabase has been removed - using Railway backend instead
 // This file is kept as a stub to prevent import errors during migration
 
-// Mock supabase client that throws helpful errors
 export const supabase = {
   from: () => {
     throw new Error('Supabase has been removed. Use Railway API instead.')

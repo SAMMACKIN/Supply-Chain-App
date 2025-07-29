@@ -63,24 +63,20 @@ export interface CallOff {
   counterparty_id: string
   direction: 'BUY' | 'SELL'
   incoterm_code: string
-  fulfillment_location?: string  // For SELL: where we source the goods from
-  delivery_location?: string     // For SELL with delivery incoterms: where we deliver to
-  delivery_address_id?: string   // Reference to selected counterparty address
+  delivery_address_id?: string
   status: 'NEW' | 'CONFIRMED' | 'FULFILLED' | 'CANCELLED'
   created_by: string
   created_at: string
   confirmed_at?: string
   cancelled_at?: string
   fulfilled_at?: string
-  delivery_address?: CounterpartyAddress // Joined address details
+  delivery_address?: CounterpartyAddress
 }
 
 export interface CreateCallOffRequest {
   quota_id: string
   bundle_qty: number
   requested_delivery_date?: string
-  fulfillment_location?: string
-  delivery_location?: string
   delivery_address_id?: string
 }
 
@@ -90,7 +86,6 @@ export interface CreateCallOffResponse {
   error?: string
 }
 
-// Future: Draft call-offs from email integration
 export interface DraftCallOff {
   draft_id: string
   counterparty_id: string
