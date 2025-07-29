@@ -11,43 +11,47 @@ interface ErrorResponse {
 
 export const errorHandler = (
   err: Error,
-  req: Request,
+  _req: Request,
   res: Response<ErrorResponse>,
-  next: NextFunction
-) => {
+  _next: NextFunction
+): void => {
   console.error('Error:', err);
 
   // Zod validation errors
   if (err instanceof ZodError) {
-    return res.status(400).json({
+    res.status(400).json({
       success: false,
       error: 'Validation failed',
       details: err.flatten().fieldErrors,
     });
+    return;
   }
 
   // Prisma errors
   if (err instanceof Prisma.PrismaClientKnownRequestError) {
     if (err.code === 'P2002') {
-      return res.status(409).json({
+      res.status(409).json({
         success: false,
         error: 'A record with this value already exists',
         code: err.code,
       });
+      return;
     }
     if (err.code === 'P2025') {
-      return res.status(404).json({
+      res.status(404).json({
         success: false,
         error: 'Record not found',
         code: err.code,
       });
+      return;
     }
     if (err.code === 'P2003') {
-      return res.status(400).json({
+      res.status(400).json({
         success: false,
         error: 'Invalid reference: related record not found',
         code: err.code,
       });
+      return;
     }
   }
 

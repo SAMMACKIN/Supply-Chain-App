@@ -81,7 +81,7 @@ router.get('/', requireAuth, async (req, res) => {
 });
 
 // GET /api/quotas/:id - Get single quota
-router.get('/:id', requireAuth, async (req, res) => {
+router.get('/:id', requireAuth, async (req, res): Promise<void> => {
   const { id } = req.params;
   
   const quota = await prisma.quota.findUnique({
@@ -96,10 +96,11 @@ router.get('/:id', requireAuth, async (req, res) => {
   });
   
   if (!quota) {
-    return res.status(404).json({
+    res.status(404).json({
       success: false,
       error: 'Quota not found',
     });
+    return;
   }
   
   res.json({
@@ -109,7 +110,7 @@ router.get('/:id', requireAuth, async (req, res) => {
 });
 
 // GET /api/quotas/counterparties - List unique counterparties
-router.get('/filters/counterparties', requireAuth, async (req, res) => {
+router.get('/filters/counterparties', requireAuth, async (_req, res) => {
   const counterparties = await prisma.counterparty.findMany({
     where: {
       is_active: true,

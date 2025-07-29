@@ -44,7 +44,7 @@ router.get('/', requireAuth, async (req, res) => {
 });
 
 // POST /api/call-offs/:callOffId/shipment-lines - Create shipment line
-router.post('/', requireAuth, async (req, res) => {
+router.post('/', requireAuth, async (req, res): Promise<void> => {
   const { callOffId } = req.params;
   const data = createShipmentLineSchema.parse(req.body);
   
@@ -57,26 +57,29 @@ router.post('/', requireAuth, async (req, res) => {
   });
   
   if (!callOff) {
-    return res.status(400).json({
+    res.status(400).json({
       success: false,
       error: 'Invalid call_off_id: Call-off not found',
     });
+    return;
   }
   
   if (!['NEW', 'CONFIRMED'].includes(callOff.status)) {
-    return res.status(400).json({
+    res.status(400).json({
       success: false,
       error: `Cannot add shipment lines to call-off with status: ${callOff.status}`,
     });
+    return;
   }
   
   // Check total quantity doesn't exceed call-off quantity
   const currentQty = callOff.shipment_lines.reduce((sum, line) => sum + line.bundle_qty, 0);
   if (currentQty + data.bundle_qty > callOff.bundle_qty) {
-    return res.status(400).json({
+    res.status(400).json({
       success: false,
       error: `Total shipment quantity would exceed call-off quantity (${callOff.bundle_qty} bundles)`,
     });
+    return;
   }
   
   // Create shipment line
@@ -121,7 +124,7 @@ router.patch('/:id', requireAuth, async (req, res) => {
 });
 
 // DELETE /api/shipment-lines/:id - Delete shipment line
-router.delete('/:id', requireAuth, async (req, res) => {
+router.delete('/:id', requireAuth, async (req, res): Promise<void> => {
   const { id } = req.params;
   
   // Check if shipment line can be deleted
@@ -133,17 +136,19 @@ router.delete('/:id', requireAuth, async (req, res) => {
   });
   
   if (!shipmentLine) {
-    return res.status(404).json({
+    res.status(404).json({
       success: false,
       error: 'Shipment line not found',
     });
+    return;
   }
   
   if (shipmentLine.status !== 'PLANNED') {
-    return res.status(400).json({
+    res.status(400).json({
       success: false,
       error: 'Only PLANNED shipment lines can be deleted',
     });
+    return;
   }
   
   await prisma.shipmentLine.delete({

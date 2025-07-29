@@ -8,7 +8,7 @@ export const corsMiddleware = cors({
     if (!origin) return callback(null, true);
     
     // List of allowed origins
-    const allowedOrigins = [
+    const allowedOrigins: (string | RegExp)[] = [
       env.FRONTEND_URL,
       'http://localhost:3000',
       'http://localhost:5173', // Vite default
@@ -24,10 +24,11 @@ export const corsMiddleware = cors({
     
     // Check if origin is allowed
     const allowed = allowedOrigins.some(allowed => {
-      if (allowed instanceof RegExp) {
+      if (typeof allowed === 'string') {
+        return allowed === origin;
+      } else {
         return allowed.test(origin);
       }
-      return allowed === origin;
     });
     
     if (allowed) {

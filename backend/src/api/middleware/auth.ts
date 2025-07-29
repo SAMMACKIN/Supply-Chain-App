@@ -15,7 +15,7 @@ declare global {
 }
 
 // Clerk authentication middleware - DISABLED FOR NOW
-export const requireAuth = (req: Request, res: Response, next: NextFunction) => {
+export const requireAuth = (req: Request, _res: Response, next: NextFunction): void => {
   // Skip auth for development
   req.auth = {
     userId: 'dev-user-123',
@@ -25,13 +25,14 @@ export const requireAuth = (req: Request, res: Response, next: NextFunction) => 
 };
 
 // Custom middleware to check user roles (after Clerk auth)
-export const requireRole = (roles: string[]) => {
-  return async (req: Request, res: Response, next: NextFunction) => {
+export const requireRole = (_roles: string[]) => {
+  return async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     if (!req.auth) {
-      return res.status(401).json({
+      res.status(401).json({
         success: false,
         error: 'Authentication required',
       });
+      return;
     }
 
     // TODO: Fetch user profile and check role

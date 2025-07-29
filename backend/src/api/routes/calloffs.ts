@@ -32,7 +32,7 @@ const generateCallOffNumber = (): string => {
 };
 
 // GET /api/call-offs - List call-offs
-router.get('/', requireAuth, async (req, res) => {
+router.get('/', requireAuth, async (_req, res) => {
   const callOffs = await prisma.callOff.findMany({
     include: {
       quota: {
@@ -61,7 +61,7 @@ router.get('/', requireAuth, async (req, res) => {
 });
 
 // GET /api/call-offs/:id - Get single call-off
-router.get('/:id', requireAuth, async (req, res) => {
+router.get('/:id', requireAuth, async (req, res): Promise<void> => {
   const { id } = req.params;
   
   const callOff = await prisma.callOff.findUnique({
@@ -81,10 +81,11 @@ router.get('/:id', requireAuth, async (req, res) => {
   });
   
   if (!callOff) {
-    return res.status(404).json({
+    res.status(404).json({
       success: false,
       error: 'Call-off not found',
     });
+    return;
   }
   
   res.json({
@@ -94,7 +95,7 @@ router.get('/:id', requireAuth, async (req, res) => {
 });
 
 // POST /api/call-offs - Create call-off
-router.post('/', requireAuth, async (req, res) => {
+router.post('/', requireAuth, async (req, res): Promise<void> => {
   const data = createCallOffSchema.parse(req.body);
   
   // Get quota details
@@ -104,10 +105,11 @@ router.post('/', requireAuth, async (req, res) => {
   });
   
   if (!quota) {
-    return res.status(400).json({
+    res.status(400).json({
       success: false,
       error: 'Invalid quota_id: Quota not found',
     });
+    return;
   }
   
   // Check available quantity
@@ -124,10 +126,11 @@ router.post('/', requireAuth, async (req, res) => {
   const availableQty = quota.bundle_qty - (usedQty._sum.bundle_qty || 0);
   
   if (data.bundle_qty > availableQty) {
-    return res.status(400).json({
+    res.status(400).json({
       success: false,
       error: `Insufficient quota: only ${availableQty} bundles available`,
     });
+    return;
   }
   
   // Create call-off
@@ -163,7 +166,7 @@ router.post('/', requireAuth, async (req, res) => {
 });
 
 // PATCH /api/call-offs/:id - Update call-off
-router.patch('/:id', requireAuth, async (req, res) => {
+router.patch('/:id', requireAuth, async (req, res): Promise<void> => {
   const { id } = req.params;
   const data = updateCallOffSchema.parse(req.body);
   
@@ -173,17 +176,19 @@ router.patch('/:id', requireAuth, async (req, res) => {
   });
   
   if (!existing) {
-    return res.status(404).json({
+    res.status(404).json({
       success: false,
       error: 'Call-off not found',
     });
+    return;
   }
   
   if (existing.status !== 'NEW') {
-    return res.status(400).json({
+    res.status(400).json({
       success: false,
       error: 'Only NEW call-offs can be edited',
     });
+    return;
   }
   
   // Update call-off
