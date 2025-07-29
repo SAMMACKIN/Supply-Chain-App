@@ -1,5 +1,5 @@
 import { Request, Response, NextFunction } from 'express';
-import { ClerkExpressRequireAuth } from '@clerk/clerk-sdk-node';
+// import { ClerkExpressRequireAuth } from '@clerk/clerk-sdk-node'; // TODO: Enable when auth is implemented
 
 // Extend Express Request type to include auth
 declare global {
