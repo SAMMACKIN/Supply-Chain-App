@@ -123,7 +123,7 @@ router.post('/', requireAuth, async (req, res): Promise<void> => {
     },
   });
   
-  const availableQty = quota.bundle_qty - (usedQty._sum.bundle_qty || 0);
+  const availableQty = quota.qty_t - (usedQty._sum.bundle_qty || 0);
   
   if (data.bundle_qty > availableQty) {
     res.status(400).json({

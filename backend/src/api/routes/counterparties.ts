@@ -67,7 +67,6 @@ router.get('/:id', requireAuth, async (req, res): Promise<void> => {
       where: { counterparty_id: id },
       include: {
         quotas: {
-          where: { is_active: true },
           orderBy: { created_at: 'desc' },
           take: 10,
         },
