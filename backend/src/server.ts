@@ -19,6 +19,8 @@ import quotaRoutes from './api/routes/quotas';
 import callOffRoutes from './api/routes/calloffs';
 import shipmentLineRoutes from './api/routes/shipment-lines';
 import authRoutes from './api/routes/auth';
+import diagnosticRoutes from './api/routes/diagnostic';
+import counterpartyRoutes from './api/routes/counterparties';
 
 const app = express();
 const PORT = parseInt(process.env.PORT || '3001', 10);
@@ -94,6 +96,8 @@ app.use('/api/auth', authRoutes);
 app.use('/api/quotas', quotaRoutes);
 app.use('/api/call-offs', callOffRoutes);
 app.use('/api/shipment-lines', shipmentLineRoutes);
+app.use('/api/counterparties', counterpartyRoutes);
+app.use('/api/diagnostic', diagnosticRoutes);
 
 // Error handling middleware (must be last)
 app.use(errorHandler);
