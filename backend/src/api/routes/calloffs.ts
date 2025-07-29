@@ -116,7 +116,7 @@ router.post('/', requireAuth, async (req, res): Promise<void> => {
   const usedQty = await prisma.callOff.aggregate({
     where: {
       quota_id: data.quota_id,
-      status: { notIn: ['CANCELLED'] },
+      status: { notIn: ['CANCELLED'] as any },
     },
     _sum: {
       bundle_qty: true,
@@ -147,7 +147,7 @@ router.post('/', requireAuth, async (req, res): Promise<void> => {
       // delivery_location: data.delivery_location, // Field doesn't exist in imported DB
       // fulfillment_location: data.fulfillment_location, // Field doesn't exist in imported DB
       created_by: req.auth!.userId,
-      status: 'NEW',
+      status: 'NEW' as any, // Prisma enum type
     },
     include: {
       quota: {
@@ -221,10 +221,10 @@ router.post('/:id/confirm', requireAuth, async (req, res) => {
   const callOff = await prisma.callOff.update({
     where: {
       call_off_id: id,
-      status: 'NEW',
+      status: 'NEW' as any,
     },
     data: {
-      status: 'CONFIRMED',
+      status: 'CONFIRMED' as any,
       confirmed_at: new Date(),
     },
   });
@@ -242,10 +242,10 @@ router.post('/:id/cancel', requireAuth, async (req, res) => {
   const callOff = await prisma.callOff.update({
     where: {
       call_off_id: id,
-      status: { in: ['NEW', 'CONFIRMED'] },
+      status: { in: ['NEW', 'CONFIRMED'] as any },
     },
     data: {
-      status: 'CANCELLED',
+      status: 'CANCELLED' as any,
       cancelled_at: new Date(),
     },
   });
@@ -263,10 +263,10 @@ router.post('/:id/fulfill', requireAuth, async (req, res) => {
   const callOff = await prisma.callOff.update({
     where: {
       call_off_id: id,
-      status: 'CONFIRMED',
+      status: 'CONFIRMED' as any,
     },
     data: {
-      status: 'FULFILLED',
+      status: 'FULFILLED' as any,
       fulfilled_at: new Date(),
     },
   });

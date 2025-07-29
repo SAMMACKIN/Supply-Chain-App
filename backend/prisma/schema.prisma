@@ -30,6 +30,15 @@ enum CallOffStatus {
   FULFILLED
 }
 
+enum CallOffStatusEnum {
+  NEW
+  CONFIRMED
+  FULFILLED
+  CANCELLED
+  
+  @@map("call_off_status_enum")
+}
+
 enum ShipmentLineStatus {
   PLANNED
   IN_TRANSIT
@@ -130,7 +139,7 @@ model CallOff {
   direction               Direction
   incoterm_code           String        @db.VarChar(3)
   bundle_qty              Int
-  status                  String        @default("NEW")
+  status                  CallOffStatusEnum @default(NEW) @map("status")
   requested_delivery_date DateTime?     @db.Date
   // delivery_address_id     String?       @db.Uuid // Column doesn't exist in imported DB
   // delivery_location       String?      // Column doesn't exist in imported DB
