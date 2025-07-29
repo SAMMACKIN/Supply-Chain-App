@@ -32,6 +32,7 @@ import {
   PlayArrow as CreateCallOffIcon
 } from '@mui/icons-material'
 import { fetchAvailableQuotas } from '../services/calloff-api'
+import { fetchQuotas } from '../lib/api'
 import type { Quota } from '../types/calloff'
 import { CreateCallOffWizard } from '../components/CallOff/CreateCallOffWizard'
 
@@ -42,10 +43,13 @@ export function MuiQuotas() {
   const [showCreateWizard, setShowCreateWizard] = useState(false)
   const [selectedQuota, setSelectedQuota] = useState<Quota | undefined>()
 
-  // Query available quotas from Supabase
+  // Use new API if available, otherwise fall back to Supabase
+  const useNewApi = !!import.meta.env.VITE_API_URL
+  
+  // Query available quotas
   const { data: quotas, isLoading, error, refetch } = useQuery({
     queryKey: ['quotas'],
-    queryFn: fetchAvailableQuotas,
+    queryFn: useNewApi ? fetchQuotas : fetchAvailableQuotas,
     staleTime: 5 * 60 * 1000, // 5 minutes
   })
 
