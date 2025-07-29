@@ -1,8 +1,9 @@
 import request from 'supertest';
 import express from 'express';
-import { jest } from '@jest/globals';
+import 'express-async-errors'; // Import this before routes
 import quotasRouter from '../quotas';
 import { prisma } from '../../../db/client';
+import { ZodError } from 'zod';
 
 // Mock Prisma client
 jest.mock('../../../db/client', () => ({
@@ -22,7 +23,7 @@ jest.mock('../../../db/client', () => ({
 
 // Mock auth middleware
 jest.mock('../../middleware/auth', () => ({
-  requireAuth: jest.fn((req, _res, next) => {
+  requireAuth: jest.fn((req: any, _res: any, next: any) => {
     req.auth = {
       userId: 'test-user-123',
       sessionId: 'test-session-123',
@@ -39,7 +40,7 @@ app.use('/api/quotas', quotasRouter);
 // Add error handler middleware
 app.use((err: any, _req: any, res: any, _next: any) => {
   // Simplified error handler for tests
-  if (err.name === 'ZodError') {
+  if (err instanceof ZodError || err.name === 'ZodError') {
     res.status(400).json({
       success: false,
       error: 'Invalid input',
@@ -118,6 +119,10 @@ describe('Quotas API Routes', () => {
             _count: {
               call_offs: 5,
             },
+            // Date objects are serialized to strings in JSON
+            created_at: mockQuota.created_at.toISOString(),
+            updated_at: mockQuota.updated_at.toISOString(),
+            period_month: mockQuota.period_month.toISOString(),
             used_qty: 250,
             available_qty: 750,
             bundle_qty: 1000, // Maps qty_t to bundle_qty
@@ -328,7 +333,20 @@ describe('Quotas API Routes', () => {
 
       expect(response.body).toEqual({
         success: true,
-        data: mockQuotaWithDetails,
+        data: {
+          ...mockQuotaWithDetails,
+          // Date objects are serialized to strings in JSON
+          created_at: mockQuotaWithDetails.created_at.toISOString(),
+          updated_at: mockQuotaWithDetails.updated_at.toISOString(),
+          period_month: mockQuotaWithDetails.period_month.toISOString(),
+          counterparty: {
+            ...mockQuotaWithDetails.counterparty,
+          },
+          call_offs: mockQuotaWithDetails.call_offs.map(co => ({
+            ...co,
+            created_at: co.created_at.toISOString(),
+          })),
+        },
       });
 
       expect(prisma.quota.findUnique).toHaveBeenCalledWith({
@@ -451,8 +469,8 @@ describe('Quotas API Routes', () => {
         .expect(200);
 
       // Auth middleware should have been called
-      const { requireAuth } = jest.requireMock('../../middleware/auth');
-      expect(requireAuth).toHaveBeenCalled();
+      const authMock = jest.requireMock('../../middleware/auth') as any;
+      expect(authMock.requireAuth).toHaveBeenCalled();
     });
   });
 

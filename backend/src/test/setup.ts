@@ -1,5 +1,4 @@
 // Test setup file for Jest
-import { jest } from '@jest/globals';
 
 // Set test environment
 process.env.NODE_ENV = 'test';

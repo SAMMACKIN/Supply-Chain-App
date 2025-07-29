@@ -21,6 +21,7 @@ async function apiCall<T>(endpoint: string, options?: RequestInit): Promise<T> {
   const data = await response.json()
   
   if (!response.ok) {
+    console.error('API Error Response:', data)
     throw new Error(data.error || `API call failed: ${response.statusText}`)
   }
   

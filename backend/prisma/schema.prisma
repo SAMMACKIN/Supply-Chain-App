@@ -17,9 +17,19 @@ enum UserRole {
   READ_ONLY
 }
 
+enum UserRoleEnum {
+  OPS
+  TRADE
+  PLANNER
+  
+  @@map("user_role_enum")
+}
+
 enum Direction {
   BUY
   SELL
+  
+  @@map("direction_enum")
 }
 
 enum CallOffStatus {
