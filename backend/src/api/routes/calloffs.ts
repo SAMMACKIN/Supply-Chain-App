@@ -19,7 +19,7 @@ const updateCallOffSchema = z.object({
 
 const generateCallOffNumber = (): string => {
   const year = new Date().getFullYear();
-  const timestamp = Date.now().toString().slice(-6);
+  const timestamp = Date.now().toString().slice(-4);
   return `CO-${year}-${timestamp}`;
 };
 
