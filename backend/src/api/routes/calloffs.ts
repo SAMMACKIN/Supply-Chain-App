@@ -19,8 +19,8 @@ const updateCallOffSchema = z.object({
 
 const generateCallOffNumber = (): string => {
   const year = new Date().getFullYear();
-  const timestamp = Date.now().toString().slice(-4);
-  return `CO-${year}-${timestamp}`;
+  const randomNum = Math.floor(Math.random() * 9000) + 1000; // 4-digit number 1000-9999
+  return `CO-${year}-${randomNum}`;
 };
 
 router.get('/', requireAuth, async (_req, res) => {
