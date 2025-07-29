@@ -12,15 +12,15 @@ const createCallOffSchema = z.object({
   bundle_qty: z.number().int().min(1).max(10000),
   requested_delivery_date: z.string().datetime().optional(),
   // delivery_address_id: z.string().uuid().optional(), // Field doesn't exist in imported DB
-  delivery_location: z.string().optional(),
-  fulfillment_location: z.string().optional(),
+  // delivery_location: z.string().optional(), // Field doesn't exist in imported DB
+  // fulfillment_location: z.string().optional(), // Field doesn't exist in imported DB
 });
 
 const updateCallOffSchema = z.object({
   bundle_qty: z.number().int().min(1).max(10000).optional(),
   requested_delivery_date: z.string().datetime().optional(),
-  delivery_location: z.string().optional(),
-  fulfillment_location: z.string().optional(),
+  // delivery_location: z.string().optional(), // Field doesn't exist in imported DB
+  // fulfillment_location: z.string().optional(), // Field doesn't exist in imported DB
   // delivery_address_id: z.string().uuid().optional(), // Field doesn't exist in imported DB
 });
 
@@ -144,8 +144,8 @@ router.post('/', requireAuth, async (req, res): Promise<void> => {
       bundle_qty: data.bundle_qty,
       requested_delivery_date: data.requested_delivery_date ? new Date(data.requested_delivery_date) : undefined,
       // delivery_address_id: data.delivery_address_id, // Field doesn't exist in imported DB
-      delivery_location: data.delivery_location,
-      fulfillment_location: data.fulfillment_location,
+      // delivery_location: data.delivery_location, // Field doesn't exist in imported DB
+      // fulfillment_location: data.fulfillment_location, // Field doesn't exist in imported DB
       created_by: req.auth!.userId,
       status: 'NEW',
     },

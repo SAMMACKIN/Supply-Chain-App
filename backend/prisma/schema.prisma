@@ -133,14 +133,15 @@ model CallOff {
   status                  String        @default("NEW")
   requested_delivery_date DateTime?     @db.Date
   // delivery_address_id     String?       @db.Uuid // Column doesn't exist in imported DB
-  delivery_location       String?
-  fulfillment_location    String?
+  // delivery_location       String?      // Column doesn't exist in imported DB
+  // fulfillment_location    String?      // Column doesn't exist in imported DB
   created_by              String        @db.Uuid
   created_at              DateTime      @default(now())
   updated_at              DateTime      @updatedAt
   confirmed_at            DateTime?
   cancelled_at            DateTime?
   fulfilled_at            DateTime?
+  cancellation_reason     String?       @map("cancellation_reason")
   
   // Relations
   quota                   Quota                @relation(fields: [quota_id], references: [quota_id])
