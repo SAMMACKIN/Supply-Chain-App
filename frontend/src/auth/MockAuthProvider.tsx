@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react'
-import { AuthContext } from './AuthProvider'
+import { AuthContext } from './AuthContext'
 import type { 
   AuthContextType, 
   AuthUser, 

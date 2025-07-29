@@ -3,7 +3,6 @@ import { createTheme, ThemeProvider as MuiThemeProvider } from '@mui/material/st
 import CssBaseline from '@mui/material/CssBaseline'
 import { ThemeProvider } from './contexts/ThemeContext'
 import { QueryProvider } from './providers/QueryProvider'
-import { AuthProvider } from './auth/AuthProvider'
 import { MockAuthProvider } from './auth/MockAuthProvider'
 import { ProtectedRoute } from './auth/ProtectedRoute'
 import { MuiLayout } from './components/layout/MuiLayout'
@@ -34,9 +33,8 @@ const theme = createTheme({
 })
 
 function App() {
-  const isDevMode = import.meta.env.VITE_DEV_MODE === 'true'
-  // Force MockAuthProvider until Supabase is removed
-  const AuthProviderComponent = MockAuthProvider // isDevMode ? MockAuthProvider : AuthProvider
+  // Using MockAuthProvider for development
+  const AuthProviderComponent = MockAuthProvider
 
   return (
     <ThemeProvider defaultTheme="dark">

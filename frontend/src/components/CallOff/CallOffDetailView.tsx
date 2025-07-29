@@ -28,7 +28,7 @@ import {
 import { fetchQuotaBalance, fetchAvailableQuotas } from '../../services/calloff-api'
 import { ShipmentLineList } from './ShipmentLineList'
 import type { CallOff } from '../../types/calloff'
-import { supabase } from '../../lib/supabase'
+import { api } from '../../services/api-client'
 
 interface CallOffDetailViewProps {
   callOff: CallOff
@@ -66,18 +66,8 @@ export function CallOffDetailView({ callOff, open, onClose, onEdit }: CallOffDet
     queryKey: ['quota', callOff.quota_id],
     queryFn: async () => {
       try {
-        const { data, error } = await supabase
-          .from('quota')
-          .select('*, counterparty:counterparty_id(company_name, company_code)')
-          .eq('quota_id', callOff.quota_id)
-          .single()
-        
-        if (error) {
-          console.error('Error fetching single quota:', error)
-          // Return null instead of throwing to prevent 406 errors
-          return null
-        }
-        return data
+        const response = await api.quotas.get(callOff.quota_id)
+        return response.data
       } catch (err) {
         console.error('Failed to fetch quota:', err)
         return null

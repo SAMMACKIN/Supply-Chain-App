@@ -19,7 +19,7 @@ export function DevBanner() {
           }
         }}
       >
-        🚧 Development Environment - Connected to Supabase Development Instance
+        🚧 Development Environment - Connected to Railway Backend
       </Alert>
     </Box>
   )

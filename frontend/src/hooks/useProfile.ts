@@ -1,6 +1,5 @@
 import { useState, useCallback } from 'react'
 import { useAuth } from './useAuth'
-import { supabase } from '../lib/supabase'
 import type { UserProfile } from '../types/auth'
 
 export function useProfile() {
@@ -20,22 +19,8 @@ export function useProfile() {
     setError(null)
     
     try {
-      const { data, error: updateError } = await supabase
-        .from('user_profiles')
-        .update({
-          display_name: updates.display_name,
-          business_unit: updates.business_unit,
-          updated_at: new Date().toISOString()
-        })
-        .eq('user_id', user.id)
-        .select()
-        .single()
-      
-      if (updateError) throw updateError
-      
-      // Update the auth context with new profile data
-      await updateAuthProfile(data)
-      
+      // In mock mode, updateAuthProfile handles everything
+      await updateAuthProfile(updates)
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to update profile')
       throw err
@@ -45,22 +30,9 @@ export function useProfile() {
   }, [user?.id, updateAuthProfile])
   
   const refreshProfile = useCallback(async () => {
-    if (!user?.id) return
-    
-    try {
-      const { data, error } = await supabase
-        .from('user_profiles')
-        .select('*')
-        .eq('user_id', user.id)
-        .single()
-      
-      if (error) throw error
-      
-      await updateAuthProfile(data)
-    } catch (err) {
-      console.error('Failed to refresh profile:', err)
-    }
-  }, [user?.id, updateAuthProfile])
+    // In mock mode, profile is already in memory
+    console.log('Profile refresh requested - using cached data')
+  }, [])
   
   return {
     profile,

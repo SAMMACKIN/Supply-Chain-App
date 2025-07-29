@@ -43,7 +43,7 @@ export function MuiQuotas() {
   const [showCreateWizard, setShowCreateWizard] = useState(false)
   const [selectedQuota, setSelectedQuota] = useState<Quota | undefined>()
 
-  // Use new API if available, otherwise fall back to Supabase
+  // Using Railway API
   const useNewApi = !!import.meta.env.VITE_API_URL
   
   // Query available quotas

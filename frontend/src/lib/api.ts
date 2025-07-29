@@ -1,41 +1,25 @@
-// Simple API wrapper that can use either Supabase or Railway
+// API wrapper for Railway backend
 
-const RAILWAY_API = import.meta.env.VITE_API_URL;
-const USE_RAILWAY = !!RAILWAY_API;
+const RAILWAY_API = import.meta.env.VITE_API_URL || '';
 
 export async function fetchQuotas() {
-  if (USE_RAILWAY) {
-    const response = await fetch(`${RAILWAY_API}/quotas`);
-    const data = await response.json();
-    return data.data;
-  } else {
-    // Fallback to Supabase (current implementation)
-    const { supabase } = await import('./supabase');
-    const { data, error } = await supabase
-      .from('quota')
-      .select('*, counterparty:counterparty_id(company_name, company_code)');
-    if (error) throw error;
-    return data;
+  const response = await fetch(`${RAILWAY_API}/quotas`);
+  if (!response.ok) {
+    throw new Error(`Failed to fetch quotas: ${response.statusText}`);
   }
+  const data = await response.json();
+  return data.data;
 }
 
 export async function createCallOff(payload: any) {
-  if (USE_RAILWAY) {
-    const response = await fetch(`${RAILWAY_API}/call-offs`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(payload)
-    });
-    const data = await response.json();
-    return data.data;
-  } else {
-    const { supabase } = await import('./supabase');
-    const { data, error } = await supabase
-      .from('call_off')
-      .insert(payload)
-      .select()
-      .single();
-    if (error) throw error;
-    return data;
+  const response = await fetch(`${RAILWAY_API}/call-offs`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(payload)
+  });
+  if (!response.ok) {
+    throw new Error(`Failed to create call-off: ${response.statusText}`);
   }
+  const data = await response.json();
+  return data.data;
 }

@@ -10,18 +10,20 @@
 // Mock authentication for tests
 Cypress.Commands.add('mockAuth', () => {
   cy.window().then((win) => {
-    // Mock Supabase auth state
-    win.localStorage.setItem('supabase.auth.token', JSON.stringify({
-      currentSession: {
-        access_token: 'mock-token',
-        user: {
-          id: 'test-user-id',
-          email: 'test@example.com',
-          app_metadata: {},
-          user_metadata: {},
-          aud: 'authenticated',
-          created_at: new Date().toISOString()
-        }
+    // Mock auth state for MockAuthProvider
+    win.localStorage.setItem('mock_auth_user', JSON.stringify({
+      id: 'test-user-id',
+      email: 'test@example.com',
+      profile: {
+        id: 'test-profile-id',
+        user_id: 'test-user-id',
+        email: 'test@example.com',
+        display_name: 'Test User',
+        business_unit: 'Development',
+        role: 'ADMIN',
+        warehouse_ids: [],
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString()
       }
     }))
   })
@@ -29,32 +31,25 @@ Cypress.Commands.add('mockAuth', () => {
 
 // Custom command to bypass authentication
 Cypress.Commands.add('bypassAuth', () => {
-  cy.intercept('GET', '**/auth/v1/user', {
+  // Intercept Railway API calls for testing
+  cy.intercept('GET', '**/api/quotas', {
     statusCode: 200,
     body: {
-      id: 'test-user-id',
-      email: 'test@example.com',
-      app_metadata: {},
-      user_metadata: {},
-      aud: 'authenticated',
-      created_at: new Date().toISOString()
+      success: true,
+      data: []
     }
   })
   
-  cy.intercept('GET', '**/rest/v1/user_profiles*', {
+  cy.intercept('GET', '**/api/call-offs', {
     statusCode: 200,
-    body: [{
-      id: 'test-profile-id',
-      user_id: 'test-user-id',
-      email: 'test@example.com',
-      display_name: 'Test User',
-      business_unit: 'Test Unit',
-      role: 'TRADE',
-      warehouse_ids: [],
-      created_at: new Date().toISOString(),
-      updated_at: new Date().toISOString()
-    }]
+    body: {
+      success: true,
+      data: []
+    }
   })
+  
+  // Ensure mock auth is set
+  cy.mockAuth()
 })
 
 // Custom command to navigate and wait for page load

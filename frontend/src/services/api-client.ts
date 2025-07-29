@@ -1,7 +1,6 @@
 // New API client to replace Supabase
-import { env } from '../config/environment';
 
-const API_BASE_URL = env.VITE_API_URL || 'http://localhost:3001/api';
+const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001/api';
 
 class ApiError extends Error {
   constructor(public status: number, message: string, public details?: any) {
