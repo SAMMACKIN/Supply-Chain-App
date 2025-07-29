@@ -1,0 +1,185 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// Enums
+enum UserRole {
+  ADMIN
+  OPS
+  READ_ONLY
+}
+
+enum Direction {
+  BUY
+  SELL
+}
+
+enum CallOffStatus {
+  NEW
+  CONFIRMED
+  IN_PROGRESS
+  CANCELLED
+  FULFILLED
+}
+
+enum ShipmentLineStatus {
+  PLANNED
+  IN_TRANSIT
+  DELIVERED
+  CANCELLED
+}
+
+enum AddressType {
+  BILLING
+  DELIVERY
+  BOTH
+}
+
+// Models
+model UserProfile {
+  user_id        String   @id @db.Uuid
+  role           UserRole
+  business_unit  String
+  warehouse_ids  String[]
+  created_at     DateTime @default(now())
+  updated_at     DateTime @updatedAt
+  
+  // Relations
+  created_call_offs CallOff[] @relation("created_by")
+  
+  @@map("user_profiles")
+}
+
+model Counterparty {
+  counterparty_id String   @id @default(uuid()) @db.Uuid
+  company_name    String
+  company_code    String   @unique
+  is_active       Boolean  @default(true)
+  created_at      DateTime @default(now())
+  updated_at      DateTime @updatedAt
+  
+  // Relations
+  quotas          Quota[]
+  call_offs       CallOff[]
+  addresses       CounterpartyAddress[]
+  
+  @@map("counterparty")
+}
+
+model CounterpartyAddress {
+  address_id      String       @id @default(uuid()) @db.Uuid
+  counterparty_id String       @db.Uuid
+  address_type    AddressType  @default(DELIVERY)
+  address_name    String
+  street_address  String
+  city            String
+  state_province  String?
+  postal_code     String?
+  country_code    String       @db.Char(2)
+  contact_name    String?
+  contact_phone   String?
+  contact_email   String?
+  is_default      Boolean      @default(false)
+  is_active       Boolean      @default(true)
+  notes           String?
+  created_at      DateTime     @default(now())
+  updated_at      DateTime     @updatedAt
+  
+  // Relations
+  counterparty    Counterparty @relation(fields: [counterparty_id], references: [counterparty_id], onDelete: Cascade)
+  call_offs       CallOff[]
+  
+  @@map("counterparty_addresses")
+}
+
+model Quota {
+  quota_id         String   @id @default(uuid()) @db.Uuid
+  counterparty_id  String   @db.Uuid
+  direction        Direction
+  metal_code       String   @db.VarChar(12)
+  month            DateTime @db.Date
+  bundle_qty       Int
+  price_per_unit   Decimal? @db.Decimal(18, 4)
+  currency_code    String?  @db.Char(3)
+  incoterm_code    String   @db.VarChar(3)
+  location_code    String   @db.VarChar(50)
+  business_unit    String
+  is_active        Boolean  @default(true)
+  created_at       DateTime @default(now())
+  updated_at       DateTime @updatedAt
+  
+  // Relations
+  counterparty     Counterparty @relation(fields: [counterparty_id], references: [counterparty_id])
+  call_offs        CallOff[]
+  
+  @@unique([counterparty_id, direction, metal_code, month, incoterm_code, location_code])
+  @@index([direction, month])
+  @@index([metal_code])
+  @@index([counterparty_id])
+  @@map("quota")
+}
+
+model CallOff {
+  call_off_id             String        @id @default(uuid()) @db.Uuid
+  call_off_number         String        @unique
+  quota_id                String        @db.Uuid
+  counterparty_id         String        @db.Uuid
+  direction               Direction
+  incoterm_code           String        @db.VarChar(3)
+  bundle_qty              Int
+  status                  CallOffStatus @default(NEW)
+  requested_delivery_date DateTime?     @db.Date
+  delivery_address_id     String?       @db.Uuid
+  delivery_location       String?
+  fulfillment_location    String?
+  created_by              String        @db.Uuid
+  created_at              DateTime      @default(now())
+  updated_at              DateTime      @updatedAt
+  confirmed_at            DateTime?
+  cancelled_at            DateTime?
+  fulfilled_at            DateTime?
+  
+  // Relations
+  quota                   Quota                @relation(fields: [quota_id], references: [quota_id])
+  counterparty            Counterparty         @relation(fields: [counterparty_id], references: [counterparty_id])
+  delivery_address        CounterpartyAddress? @relation(fields: [delivery_address_id], references: [address_id])
+  created_by_user         UserProfile          @relation("created_by", fields: [created_by], references: [user_id])
+  shipment_lines          ShipmentLine[]
+  
+  @@index([status])
+  @@index([quota_id])
+  @@index([counterparty_id])
+  @@index([call_off_number])
+  @@map("call_off")
+}
+
+model ShipmentLine {
+  shipment_line_id        String             @id @default(uuid()) @db.Uuid
+  call_off_id             String             @db.Uuid
+  transport_order_id      String?            @db.Uuid
+  bundle_qty              Int
+  metal_code              String             @db.VarChar(12)
+  destination_party_id    String?            @db.Uuid
+  expected_ship_date      DateTime?          @db.Date
+  delivery_location       String?
+  requested_delivery_date DateTime?          @db.Date
+  notes                   String?
+  status                  ShipmentLineStatus @default(PLANNED)
+  created_at              DateTime           @default(now())
+  updated_at              DateTime           @updatedAt
+  
+  // Relations
+  call_off                CallOff            @relation(fields: [call_off_id], references: [call_off_id], onDelete: Cascade)
+  
+  @@index([call_off_id])
+  @@index([status])
+  @@map("call_off_shipment_line")
+}
