@@ -11,7 +11,7 @@ const createCallOffSchema = z.object({
   quota_id: z.string().uuid(),
   bundle_qty: z.number().int().min(1).max(10000),
   requested_delivery_date: z.string().datetime().optional(),
-  delivery_address_id: z.string().uuid().optional(),
+  // delivery_address_id: z.string().uuid().optional(), // Field doesn't exist in imported DB
   delivery_location: z.string().optional(),
   fulfillment_location: z.string().optional(),
 });
@@ -21,7 +21,7 @@ const updateCallOffSchema = z.object({
   requested_delivery_date: z.string().datetime().optional(),
   delivery_location: z.string().optional(),
   fulfillment_location: z.string().optional(),
-  delivery_address_id: z.string().uuid().optional(),
+  // delivery_address_id: z.string().uuid().optional(), // Field doesn't exist in imported DB
 });
 
 // Generate call-off number
@@ -73,7 +73,7 @@ router.get('/:id', requireAuth, async (req, res): Promise<void> => {
         },
       },
       counterparty: true,
-      delivery_address: true,
+      // delivery_address: true, // Field doesn't exist in imported DB
       shipment_lines: {
         orderBy: { created_at: 'asc' },
       },
@@ -143,7 +143,7 @@ router.post('/', requireAuth, async (req, res): Promise<void> => {
       incoterm_code: quota.incoterm_code,
       bundle_qty: data.bundle_qty,
       requested_delivery_date: data.requested_delivery_date ? new Date(data.requested_delivery_date) : undefined,
-      delivery_address_id: data.delivery_address_id,
+      // delivery_address_id: data.delivery_address_id, // Field doesn't exist in imported DB
       delivery_location: data.delivery_location,
       fulfillment_location: data.fulfillment_location,
       created_by: req.auth!.userId,
