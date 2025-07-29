@@ -21,7 +21,7 @@ import shipmentLineRoutes from './api/routes/shipment-lines';
 import authRoutes from './api/routes/auth';
 
 const app = express();
-const PORT = process.env.PORT || 3001;
+const PORT = parseInt(process.env.PORT || '3001', 10);
 const HOST = '0.0.0.0'; // Bind to all network interfaces
 
 // Log startup
