@@ -22,6 +22,7 @@ import authRoutes from './api/routes/auth';
 
 const app = express();
 const PORT = process.env.PORT || 3001;
+const HOST = '0.0.0.0'; // Bind to all network interfaces
 
 // Log startup
 console.log('🔧 Starting server initialization...');
@@ -86,8 +87,8 @@ app.use('/api/shipment-lines', shipmentLineRoutes);
 app.use(errorHandler);
 
 // Start server with error handling
-const server = app.listen(PORT, async () => {
-  console.log(`🚀 Server running on port ${PORT}`);
+const server = app.listen(PORT, HOST, async () => {
+  console.log(`🚀 Server running on ${HOST}:${PORT}`);
   console.log(`📚 Environment: ${process.env.NODE_ENV}`);
   console.log(`🔄 Deployment: ${new Date().toISOString()}`);
   

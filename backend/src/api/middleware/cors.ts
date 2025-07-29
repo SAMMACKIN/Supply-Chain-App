@@ -12,15 +12,10 @@ export const corsMiddleware = cors({
       env.FRONTEND_URL,
       'http://localhost:3000',
       'http://localhost:5173', // Vite default
+      'https://supply-chain-app.vercel.app',
+      'https://supply-chain-app-five-dev.vercel.app',
+      /^https:\/\/supply-chain-app-.*\.vercel\.app$/ // All Vercel deployments
     ];
-    
-    // Add production domains
-    if (env.NODE_ENV === 'production') {
-      allowedOrigins.push(
-        'https://supply-chain-app.vercel.app',
-        /^https:\/\/supply-chain-app-.*\.vercel\.app$/ // Preview deployments
-      );
-    }
     
     // Check if origin is allowed
     const allowed = allowedOrigins.some(allowed => {
