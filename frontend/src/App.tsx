@@ -35,7 +35,8 @@ const theme = createTheme({
 
 function App() {
   const isDevMode = import.meta.env.VITE_DEV_MODE === 'true'
-  const AuthProviderComponent = isDevMode ? MockAuthProvider : AuthProvider
+  // Force MockAuthProvider until Supabase is removed
+  const AuthProviderComponent = MockAuthProvider // isDevMode ? MockAuthProvider : AuthProvider
 
   return (
     <ThemeProvider defaultTheme="dark">
