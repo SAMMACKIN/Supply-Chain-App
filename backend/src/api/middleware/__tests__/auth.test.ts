@@ -4,7 +4,6 @@ import 'express-async-errors';
 import { requireAuth, requireRole } from '../auth';
 import { clerkClient } from '@clerk/clerk-sdk-node';
 import { ClerkSyncService } from '../../../services/clerk-sync';
-import { env } from '../../../config/environment';
 
 // Mock dependencies
 jest.mock('@clerk/clerk-sdk-node', () => ({
@@ -66,10 +65,10 @@ describe('Auth Middleware', () => {
       (ClerkSyncService.getOrCreateUserProfile as jest.Mock).mockResolvedValue(mockUserProfile);
 
       // Test route that uses requireAuth
-      app.get('/test', requireAuth, (req: Request, res: Response) => {
+      app.get('/test', requireAuth, (_req: Request, res: Response) => {
         res.json({
           success: true,
-          auth: req.auth,
+          auth: _req.auth,
         });
       });
 
@@ -83,7 +82,11 @@ describe('Auth Middleware', () => {
         auth: {
           userId: 'user_test123',
           sessionId: 'sess_test123',
-          claims: mockSession,
+          claims: {
+            ...mockSession,
+            expireAt: mockSession.expireAt.toISOString(),
+            lastActiveAt: mockSession.lastActiveAt.toISOString(),
+          },
         },
       });
 
@@ -97,7 +100,7 @@ describe('Auth Middleware', () => {
     it('should reject request with missing authorization header', async () => {
       const app = createTestApp();
       
-      app.get('/test', requireAuth, (req: Request, res: Response) => {
+      app.get('/test', requireAuth, (_req: Request, res: Response) => {
         res.json({ success: true });
       });
 
@@ -116,7 +119,7 @@ describe('Auth Middleware', () => {
     it('should reject request with invalid authorization header format', async () => {
       const app = createTestApp();
       
-      app.get('/test', requireAuth, (req: Request, res: Response) => {
+      app.get('/test', requireAuth, (_req: Request, res: Response) => {
         res.json({ success: true });
       });
 
@@ -147,7 +150,7 @@ describe('Auth Middleware', () => {
       // Mock Clerk returning null for invalid token
       (clerkClient.sessions.verifySession as jest.Mock).mockResolvedValue(null);
 
-      app.get('/test', requireAuth, (req: Request, res: Response) => {
+      app.get('/test', requireAuth, (_req: Request, res: Response) => {
         res.json({ success: true });
       });
 
@@ -169,7 +172,7 @@ describe('Auth Middleware', () => {
       const sessionWithoutUserId = { ...mockSession, userId: null };
       (clerkClient.sessions.verifySession as jest.Mock).mockResolvedValue(sessionWithoutUserId);
 
-      app.get('/test', requireAuth, (req: Request, res: Response) => {
+      app.get('/test', requireAuth, (_req: Request, res: Response) => {
         res.json({ success: true });
       });
 
@@ -192,7 +195,7 @@ describe('Auth Middleware', () => {
         new Error('Clerk API error')
       );
 
-      app.get('/test', requireAuth, (req: Request, res: Response) => {
+      app.get('/test', requireAuth, (_req: Request, res: Response) => {
         res.json({ success: true });
       });
 
@@ -216,7 +219,7 @@ describe('Auth Middleware', () => {
         new Error('Database connection error')
       );
 
-      app.get('/test', requireAuth, (req: Request, res: Response) => {
+      app.get('/test', requireAuth, (_req: Request, res: Response) => {
         res.json({ success: true });
       });
 
@@ -234,7 +237,7 @@ describe('Auth Middleware', () => {
     it('should handle malformed Bearer tokens', async () => {
       const app = createTestApp();
       
-      app.get('/test', requireAuth, (req: Request, res: Response) => {
+      app.get('/test', requireAuth, (_req: Request, res: Response) => {
         res.json({ success: true });
       });
 
@@ -260,8 +263,8 @@ describe('Auth Middleware', () => {
       const app = createTestApp();
       
       // Mock authenticated request
-      app.use((req: Request, res: Response, next: NextFunction) => {
-        req.auth = {
+      app.use((_req: Request, _res: Response, next: NextFunction) => {
+        _req.auth = {
           userId: 'user_test123',
           sessionId: 'sess_test123',
         };
@@ -270,10 +273,10 @@ describe('Auth Middleware', () => {
 
       (ClerkSyncService.getOrCreateUserProfile as jest.Mock).mockResolvedValue(mockUserProfile);
 
-      app.get('/test', requireRole(['OPS', 'TRADE']), (req: Request, res: Response) => {
+      app.get('/test', requireRole(['OPS', 'TRADE']), (_req: Request, res: Response) => {
         res.json({
           success: true,
-          userProfile: req.userProfile,
+          userProfile: _req.userProfile,
         });
       });
 
@@ -295,8 +298,8 @@ describe('Auth Middleware', () => {
       const app = createTestApp();
       
       // Mock authenticated request
-      app.use((req: Request, res: Response, next: NextFunction) => {
-        req.auth = {
+      app.use((_req: Request, _res: Response, next: NextFunction) => {
+        _req.auth = {
           userId: 'user_test123',
           sessionId: 'sess_test123',
         };
@@ -308,8 +311,8 @@ describe('Auth Middleware', () => {
         role: 'PLANNER',
       });
 
-      app.get('/test', requireRole(['OPS', 'TRADE']), (req: Request, res: Response) => {
-        res.json({ success: true });
+      app.get('/test', requireRole(['OPS', 'TRADE']), (_req: Request, _res: Response) => {
+        _res.json({ success: true });
       });
 
       const response = await request(app)
@@ -325,8 +328,8 @@ describe('Auth Middleware', () => {
     it('should reject if no auth present', async () => {
       const app = createTestApp();
       
-      app.get('/test', requireRole(['OPS']), (req: Request, res: Response) => {
-        res.json({ success: true });
+      app.get('/test', requireRole(['OPS']), (_req: Request, _res: Response) => {
+        _res.json({ success: true });
       });
 
       const response = await request(app)
@@ -343,8 +346,8 @@ describe('Auth Middleware', () => {
       const app = createTestApp();
       
       // Mock authenticated request
-      app.use((req: Request, res: Response, next: NextFunction) => {
-        req.auth = {
+      app.use((_req: Request, _res: Response, next: NextFunction) => {
+        _req.auth = {
           userId: 'user_test123',
           sessionId: 'sess_test123',
         };
@@ -353,8 +356,8 @@ describe('Auth Middleware', () => {
 
       (ClerkSyncService.getOrCreateUserProfile as jest.Mock).mockResolvedValue(null);
 
-      app.get('/test', requireRole(['OPS']), (req: Request, res: Response) => {
-        res.json({ success: true });
+      app.get('/test', requireRole(['OPS']), (_req: Request, _res: Response) => {
+        _res.json({ success: true });
       });
 
       const response = await request(app)
@@ -371,8 +374,8 @@ describe('Auth Middleware', () => {
       const app = createTestApp();
       
       // Mock authenticated request
-      app.use((req: Request, res: Response, next: NextFunction) => {
-        req.auth = {
+      app.use((_req: Request, _res: Response, next: NextFunction) => {
+        _req.auth = {
           userId: 'user_test123',
           sessionId: 'sess_test123',
         };
@@ -383,8 +386,8 @@ describe('Auth Middleware', () => {
         new Error('Database error')
       );
 
-      app.get('/test', requireRole(['OPS']), (req: Request, res: Response) => {
-        res.json({ success: true });
+      app.get('/test', requireRole(['OPS']), (_req: Request, _res: Response) => {
+        _res.json({ success: true });
       });
 
       const response = await request(app)
@@ -401,8 +404,8 @@ describe('Auth Middleware', () => {
       const app = createTestApp();
       
       // Mock authenticated request
-      app.use((req: Request, res: Response, next: NextFunction) => {
-        req.auth = {
+      app.use((_req: Request, _res: Response, next: NextFunction) => {
+        _req.auth = {
           userId: 'user_test123',
           sessionId: 'sess_test123',
         };
@@ -411,8 +414,8 @@ describe('Auth Middleware', () => {
 
       (ClerkSyncService.getOrCreateUserProfile as jest.Mock).mockResolvedValue(mockUserProfile);
 
-      app.get('/test', requireRole(['OPS']), (req: Request, res: Response) => {
-        res.json({ success: true });
+      app.get('/test', requireRole(['OPS']), (_req: Request, _res: Response) => {
+        _res.json({ success: true });
       });
 
       const response = await request(app)
@@ -426,8 +429,8 @@ describe('Auth Middleware', () => {
       const app = createTestApp();
       
       // Mock authenticated request
-      app.use((req: Request, res: Response, next: NextFunction) => {
-        req.auth = {
+      app.use((_req: Request, _res: Response, next: NextFunction) => {
+        _req.auth = {
           userId: 'user_test123',
           sessionId: 'sess_test123',
         };
@@ -436,8 +439,8 @@ describe('Auth Middleware', () => {
 
       (ClerkSyncService.getOrCreateUserProfile as jest.Mock).mockResolvedValue(mockUserProfile);
 
-      app.get('/test', requireRole([]), (req: Request, res: Response) => {
-        res.json({ success: true });
+      app.get('/test', requireRole([]), (_req: Request, _res: Response) => {
+        _res.json({ success: true });
       });
 
       const response = await request(app)
@@ -459,11 +462,11 @@ describe('Auth Middleware', () => {
       (clerkClient.sessions.verifySession as jest.Mock).mockResolvedValue(mockSession);
       (ClerkSyncService.getOrCreateUserProfile as jest.Mock).mockResolvedValue(mockUserProfile);
 
-      app.get('/test', requireAuth, requireRole(['OPS']), (req: Request, res: Response) => {
-        res.json({
+      app.get('/test', requireAuth, requireRole(['OPS']), (_req: Request, _res: Response) => {
+        _res.json({
           success: true,
-          auth: req.auth,
-          userProfile: req.userProfile,
+          auth: _req.auth,
+          userProfile: _req.userProfile,
         });
       });
 
@@ -483,8 +486,8 @@ describe('Auth Middleware', () => {
     it('should fail at auth level without calling role check', async () => {
       const app = createTestApp();
       
-      app.get('/test', requireAuth, requireRole(['OPS']), (req: Request, res: Response) => {
-        res.json({ success: true });
+      app.get('/test', requireAuth, requireRole(['OPS']), (_req: Request, _res: Response) => {
+        _res.json({ success: true });
       });
 
       const response = await request(app)

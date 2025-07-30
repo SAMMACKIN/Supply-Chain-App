@@ -111,6 +111,7 @@ export function ConfirmationDialog({
       onClose={isLoading ? undefined : onClose}
       maxWidth="sm"
       fullWidth
+      disableEnforceFocus
       aria-labelledby="confirmation-dialog-title"
       aria-describedby="confirmation-dialog-description"
       onKeyDown={handleKeyDown}

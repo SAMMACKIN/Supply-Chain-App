@@ -55,13 +55,23 @@ export function MuiCallOffs() {
   }, [selectedCallOffId, callOffs])
 
   const handleViewCallOff = (callOff: CallOff) => {
-    setSelectedCallOff(callOff)
-    setShowDetailView(true)
+    try {
+      console.log('Opening call-off detail view for:', callOff.call_off_number)
+      setSelectedCallOff(callOff)
+      setShowDetailView(true)
+    } catch (error) {
+      console.error('Error viewing call-off:', error)
+    }
   }
 
   const handleEditCallOff = (callOff: CallOff) => {
-    setSelectedCallOff(callOff)
-    setShowEditDialog(true)
+    try {
+      console.log('Opening call-off edit dialog for:', callOff.call_off_number)
+      setSelectedCallOff(callOff)
+      setShowEditDialog(true)
+    } catch (error) {
+      console.error('Error editing call-off:', error)
+    }
   }
 
   const handleCloseDetailView = () => {
@@ -89,7 +99,14 @@ export function MuiCallOffs() {
         <Button
           variant="contained"
           startIcon={<AddIcon />}
-          onClick={() => setShowCreateWizard(true)}
+          onClick={() => {
+            try {
+              console.log('Opening create call-off wizard')
+              setShowCreateWizard(true)
+            } catch (error) {
+              console.error('Error opening create wizard:', error)
+            }
+          }}
           sx={{ borderRadius: 2 }}
           data-testid="create-call-off-button"
         >

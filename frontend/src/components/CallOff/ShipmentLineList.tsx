@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useMemo } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import {
   Box,
@@ -14,19 +14,53 @@ import {
   Dialog,
   DialogTitle,
   DialogContent,
-  DialogActions
+  DialogActions,
+  LinearProgress,
+  FormControl,
+  Select,
+  MenuItem,
+  InputLabel,
+  TextField,
+  Checkbox,
+  FormControlLabel,
+  Menu,
+  ListItemIcon,
+  ListItemText,
+  Divider,
+  Badge,
+  Tooltip,
+  Grid,
+  CardHeader,
+  Collapse
 } from '@mui/material'
 import {
   Add as AddIcon,
   Edit as EditIcon,
-  Delete as DeleteIcon
+  Delete as DeleteIcon,
+  FilterList as FilterIcon,
+  Schedule as ScheduleIcon,
+  LocalShipping as ShippingIcon,
+  CheckCircle as CheckCircleIcon,
+  ExpandMore as ExpandMoreIcon,
+  Timeline as TimelineIcon,
+  Assignment as AssignmentIcon,
+  MoreVert as MoreVertIcon
 } from '@mui/icons-material'
 import { fetchShipmentLines, deleteShipmentLine } from '../../services/calloff-api'
-import type { ShipmentLine, ShipmentLineStatus } from '../../types/shipment-line'
+import { api } from '../../services/api-client'
+import type { 
+  ShipmentLine, 
+  ShipmentLineStatus, 
+  ShipmentLineFilters,
+  CapacityVisualization
+} from '../../types/shipment-line'
+import type { CallOff, QuotaBalance } from '../../types/calloff'
 import { CreateShipmentLineDialog } from './CreateShipmentLineDialog'
 import { EditShipmentLineDialog } from './EditShipmentLineDialog'
+import { ConfirmationDialog } from '../common/ConfirmationDialog'
 import { useToast } from '../../hooks/useToast'
-import type { CallOff } from '../../types/calloff'
+import { canDeleteShipmentLine } from '../../utils/shipment-validation'
+import { formatQuantity, formatPercentage } from '../../utils/quota-balance-utils'
 
 interface ShipmentLineListProps {
   callOff: CallOff
@@ -41,11 +75,32 @@ const statusColors: Record<ShipmentLineStatus, 'default' | 'info' | 'warning' | 
   DELIVERED: 'success'
 }
 
+const statusIcons: Record<ShipmentLineStatus, typeof ScheduleIcon> = {
+  PLANNED: ScheduleIcon,
+  READY: AssignmentIcon,
+  PICKED: TimelineIcon,
+  SHIPPED: ShippingIcon,
+  DELIVERED: CheckCircleIcon
+}
+
 export function ShipmentLineList({ callOff, readonly = false }: ShipmentLineListProps) {
   const [createOpen, setCreateOpen] = useState(false)
   const [editLine, setEditLine] = useState<ShipmentLine | null>(null)
-  const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false)
-  const [lineToDelete, setLineToDelete] = useState<ShipmentLine | null>(null)
+  const [deleteConfirmation, setDeleteConfirmation] = useState<{
+    open: boolean
+    shipmentLine: ShipmentLine | null
+    title: string
+    message: string
+    details?: string
+    severity: 'warning' | 'error'
+  }>({ open: false, shipmentLine: null, title: '', message: '', severity: 'warning' })
+  
+  // Filtering and display state
+  const [filters, setFilters] = useState<ShipmentLineFilters>({})
+  const [showFilters, setShowFilters] = useState(false)
+  const [showCapacityDetails, setShowCapacityDetails] = useState(false)
+  const [selectedLines, setSelectedLines] = useState<Set<string>>(new Set())
+  const [filterMenuAnchor, setFilterMenuAnchor] = useState<null | HTMLElement>(null)
   
   const toast = useToast()
   const queryClient = useQueryClient()
@@ -56,13 +111,86 @@ export function ShipmentLineList({ callOff, readonly = false }: ShipmentLineList
     enabled: !!callOff.call_off_id
   })
 
+  // Fetch quota balance for enhanced capacity visualization
+  const { data: quotaBalance } = useQuery({
+    queryKey: ['quota-balance', callOff.quota_id],
+    queryFn: () => api.quotas.getBalance(callOff.quota_id),
+    enabled: !!callOff.quota_id,
+    select: (response) => response.data
+  })
+
+  // Filter shipment lines based on current filters
+  const filteredShipmentLines = useMemo(() => {
+    if (!shipmentLines) return []
+    
+    return shipmentLines.filter(line => {
+      // Status filter
+      if (filters.status && filters.status.length > 0 && !filters.status.includes(line.status)) {
+        return false
+      }
+      
+      // Metal code filter
+      if (filters.metalCode && filters.metalCode.length > 0 && !filters.metalCode.includes(line.metal_code)) {
+        return false
+      }
+      
+      // Bundle quantity range filter
+      if (filters.bundleQtyRange) {
+        const { min, max } = filters.bundleQtyRange
+        if ((min !== undefined && line.bundle_qty < min) || (max !== undefined && line.bundle_qty > max)) {
+          return false
+        }
+      }
+      
+      // Date range filter
+      if (filters.dateRange) {
+        const { start, end, field } = filters.dateRange
+        const dateValue = line[field]
+        if (!dateValue) return false
+        
+        const lineDate = new Date(dateValue)
+        const startDate = new Date(start)
+        const endDate = new Date(end)
+        
+        if (lineDate < startDate || lineDate > endDate) {
+          return false
+        }
+      }
+      
+      return true
+    })
+  }, [shipmentLines, filters])
+
+  // Calculate capacity visualization
+  const capacityInfo = useMemo<CapacityVisualization | null>(() => {
+    if (!filteredShipmentLines.length) return null
+
+    const allocatedCapacity = filteredShipmentLines.reduce((sum, line) => sum + line.bundle_qty, 0)
+    const remainingCapacity = callOff.bundle_qty - allocatedCapacity
+    const utilizationPercentage = (allocatedCapacity / callOff.bundle_qty) * 100
+
+    return {
+      totalCapacity: callOff.bundle_qty,
+      allocatedCapacity,
+      remainingCapacity,
+      utilizationPercentage,
+      isOverAllocated: allocatedCapacity > callOff.bundle_qty,
+      allocationBreakdown: filteredShipmentLines.map(line => ({
+        shipmentLineId: line.shipment_line_id,
+        bundleQty: line.bundle_qty,
+        percentage: (line.bundle_qty / callOff.bundle_qty) * 100,
+        status: line.status
+      }))
+    }
+  }, [filteredShipmentLines, callOff.bundle_qty])
+
   const deleteMutation = useMutation({
     mutationFn: (lineId: string) => deleteShipmentLine(lineId),
     onSuccess: () => {
       toast.success('Shipment line deleted successfully')
       queryClient.invalidateQueries({ queryKey: ['shipment-lines', callOff.call_off_id] })
-      setDeleteConfirmOpen(false)
-      setLineToDelete(null)
+      queryClient.invalidateQueries({ queryKey: ['quota-balance', callOff.quota_id] })
+      setDeleteConfirmation({ ...deleteConfirmation, open: false, shipmentLine: null })
     },
     onError: (error: Error) => {
       toast.error(error.message || 'Failed to delete shipment line')
@@ -70,18 +198,56 @@ export function ShipmentLineList({ callOff, readonly = false }: ShipmentLineList
   })
 
   const handleDeleteClick = (line: ShipmentLine) => {
-    setLineToDelete(line)
-    setDeleteConfirmOpen(true)
+    const deleteCheck = canDeleteShipmentLine(line, callOff)
+    
+    if (!deleteCheck.canDelete) {
+      toast.error(deleteCheck.reason || 'Cannot delete this shipment line')
+      return
+    }
+
+    setDeleteConfirmation({
+      open: true,
+      shipmentLine: line,
+      title: 'Delete Shipment Line?',
+      message: `Are you sure you want to delete this shipment line of ${formatQuantity(line.bundle_qty)} ${line.metal_code}?`,
+      details: deleteCheck.requiresConfirmation ? deleteCheck.reason : undefined,
+      severity: deleteCheck.requiresConfirmation ? 'warning' : 'error'
+    })
   }
 
   const handleDeleteConfirm = () => {
-    if (lineToDelete) {
-      deleteMutation.mutate(lineToDelete.shipment_line_id)
+    if (deleteConfirmation.shipmentLine) {
+      deleteMutation.mutate(deleteConfirmation.shipmentLine.shipment_line_id)
     }
   }
 
-  const totalBundles = shipmentLines?.reduce((sum, line) => sum + line.bundle_qty, 0) || 0
-  const remainingBundles = callOff.bundle_qty - totalBundles
+  const handleBulkSelection = (lineId: string, selected: boolean) => {
+    const newSelection = new Set(selectedLines)
+    if (selected) {
+      newSelection.add(lineId)
+    } else {
+      newSelection.delete(lineId)
+    }
+    setSelectedLines(newSelection)
+  }
+
+  const handleSelectAll = (selected: boolean) => {
+    if (selected) {
+      setSelectedLines(new Set(filteredShipmentLines.map(line => line.shipment_line_id)))
+    } else {
+      setSelectedLines(new Set())
+    }
+  }
+
+  const clearFilters = () => {
+    setFilters({})
+    setFilterMenuAnchor(null)
+  }
+
+  const getStatusIcon = (status: ShipmentLineStatus) => {
+    const IconComponent = statusIcons[status]
+    return <IconComponent fontSize="small" />
+  }
 
   if (isLoading) {
     return (

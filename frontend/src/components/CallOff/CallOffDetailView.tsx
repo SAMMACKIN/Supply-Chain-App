@@ -123,6 +123,7 @@ export function CallOffDetailView({ callOff, open, onClose, onEdit }: CallOffDet
       fullWidth
       disableRestoreFocus
       keepMounted={false}
+      disableEnforceFocus
       aria-labelledby="call-off-detail-dialog-title"
       PaperProps={{
         sx: { minHeight: '70vh' }

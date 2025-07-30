@@ -57,7 +57,7 @@ app.use((err: any, _req: any, res: any, _next: any) => {
 // Sample test data
 const mockCallOff = {
   call_off_id: '123e4567-e89b-12d3-a456-426614174000',
-  call_off_number: 'CO-2025-123456',
+  call_off_number: 'CO-2025-1234',
   quota_id: '223e4567-e89b-12d3-a456-426614174000',
   counterparty_id: '323e4567-e89b-12d3-a456-426614174000',
   direction: 'BUY',

@@ -89,6 +89,7 @@ export function EditCallOffDialog({ callOff, open, onClose }: EditCallOffDialogP
       fullWidth
       disableRestoreFocus
       keepMounted={false}
+      disableEnforceFocus
       aria-labelledby="edit-call-off-dialog-title"
     >
       <DialogTitle id="edit-call-off-dialog-title" sx={{ pb: 1 }}>

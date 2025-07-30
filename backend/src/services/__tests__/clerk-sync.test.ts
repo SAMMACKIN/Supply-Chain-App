@@ -2,14 +2,8 @@ import { clerkClient } from '@clerk/clerk-sdk-node';
 import { prisma } from '../../db/client';
 import { ClerkSyncService } from '../clerk-sync';
 import { UserRole } from '@prisma/client';
-import {
-  mapClerkRoleToUserRole,
-  extractBusinessUnit,
-  extractWarehouseIds,
-  createDefaultUserProfile,
-} from '../../utils/role-mapping';
 
-// Mock dependencies
+// Mock all dependencies
 jest.mock('@clerk/clerk-sdk-node', () => ({
   clerkClient: {
     users: {
@@ -29,11 +23,29 @@ jest.mock('../../db/client', () => ({
   },
 }));
 
+// Mock the role-mapping module
 jest.mock('../../utils/role-mapping', () => ({
-  mapClerkRoleToUserRole: jest.fn(),
-  extractBusinessUnit: jest.fn(),
-  extractWarehouseIds: jest.fn(),
-  createDefaultUserProfile: jest.fn(),
+  mapClerkRoleToUserRole: jest.fn().mockImplementation((role?: string) => {
+    if (!role) return 'READ_ONLY';
+    const normalizedRole = role.toLowerCase().trim();
+    switch (normalizedRole) {
+      case 'admin':
+        return 'ADMIN';
+      case 'ops':
+      case 'operations':
+        return 'OPS';
+      default:
+        return 'READ_ONLY';
+    }
+  }),
+  extractBusinessUnit: jest.fn().mockImplementation((metadata) => metadata?.businessUnit || 'BU001'),
+  extractWarehouseIds: jest.fn().mockImplementation((metadata) => metadata?.warehouseIds || []),
+  createDefaultUserProfile: jest.fn().mockImplementation((userId, metadata) => ({
+    user_id: userId,
+    role: metadata?.role === 'ops' ? 'OPS' : 'READ_ONLY',
+    business_unit: metadata?.businessUnit || 'BU001',
+    warehouse_ids: metadata?.warehouseIds || [],
+  })),
 }));
 
 describe('ClerkSyncService', () => {
@@ -56,20 +68,16 @@ describe('ClerkSyncService', () => {
     updated_at: new Date('2025-01-01T10:00:00Z'),
   };
 
-  const mockDefaultProfileData = {
-    user_id: 'user_test123',
-    role: UserRole.OPS,
-    business_unit: 'BU002',
-    warehouse_ids: ['WH001', 'WH002'],
-  };
-
   beforeEach(() => {
     jest.clearAllMocks();
-    // Set up default mock implementations
-    (mapClerkRoleToUserRole as jest.Mock).mockReturnValue(UserRole.OPS);
-    (extractBusinessUnit as jest.Mock).mockReturnValue('BU002');
-    (extractWarehouseIds as jest.Mock).mockReturnValue(['WH001', 'WH002']);
-    (createDefaultUserProfile as jest.Mock).mockReturnValue(mockDefaultProfileData);
+    // Reset console mocks
+    jest.spyOn(console, 'error').mockImplementation(() => {});
+    jest.spyOn(console, 'log').mockImplementation(() => {});
+    jest.spyOn(console, 'warn').mockImplementation(() => {});
+  });
+
+  afterEach(() => {
+    jest.restoreAllMocks();
   });
 
   describe('syncUser', () => {
@@ -92,18 +100,12 @@ describe('ClerkSyncService', () => {
           where: { user_id: 'user_test123' },
         });
         expect(prisma.userProfile.create).toHaveBeenCalledWith({
-          data: mockDefaultProfileData,
-        });
-        expect(mapClerkRoleToUserRole).toHaveBeenCalledWith('ops');
-        expect(extractBusinessUnit).toHaveBeenCalledWith({
-          role: 'ops',
-          businessUnit: 'BU002',
-          warehouseIds: ['WH001', 'WH002'],
-        });
-        expect(extractWarehouseIds).toHaveBeenCalledWith({
-          role: 'ops',
-          businessUnit: 'BU002',
-          warehouseIds: ['WH001', 'WH002'],
+          data: expect.objectContaining({
+            user_id: 'user_test123',
+            role: 'OPS',
+            business_unit: 'BU002',
+            warehouse_ids: ['WH001', 'WH002'],
+          }),
         });
       });
 
@@ -124,7 +126,7 @@ describe('ClerkSyncService', () => {
         expect(prisma.userProfile.update).toHaveBeenCalledWith({
           where: { user_id: 'user_test123' },
           data: {
-            role: UserRole.OPS,
+            role: 'OPS',
             business_unit: 'BU002',
             warehouse_ids: ['WH001', 'WH002'],
             updated_at: expect.any(Date),
@@ -141,22 +143,16 @@ describe('ClerkSyncService', () => {
 
         (clerkClient.users.getUser as jest.Mock).mockResolvedValue(minimalClerkUser);
         (prisma.userProfile.findUnique as jest.Mock).mockResolvedValue(null);
-        (mapClerkRoleToUserRole as jest.Mock).mockReturnValue(UserRole.READ_ONLY);
-        (extractBusinessUnit as jest.Mock).mockReturnValue('BU001');
-        (extractWarehouseIds as jest.Mock).mockReturnValue([]);
         
-        const minimalProfileData = {
+        const minimalProfile = {
           user_id: 'user_minimal',
           role: UserRole.READ_ONLY,
           business_unit: 'BU001',
           warehouse_ids: [],
-        };
-        (createDefaultUserProfile as jest.Mock).mockReturnValue(minimalProfileData);
-        (prisma.userProfile.create as jest.Mock).mockResolvedValue({
-          ...minimalProfileData,
           created_at: new Date(),
           updated_at: new Date(),
-        });
+        };
+        (prisma.userProfile.create as jest.Mock).mockResolvedValue(minimalProfile);
 
         const result = await ClerkSyncService.syncUser('user_minimal');
 
@@ -185,7 +181,14 @@ describe('ClerkSyncService', () => {
         const result = await ClerkSyncService.syncUser('user_no_metadata');
 
         expect(result).toBeDefined();
-        expect(mapClerkRoleToUserRole).toHaveBeenCalledWith(undefined);
+        expect(prisma.userProfile.create).toHaveBeenCalledWith({
+          data: expect.objectContaining({
+            user_id: 'user_no_metadata',
+            role: 'READ_ONLY',
+            business_unit: 'BU001',
+            warehouse_ids: [],
+          }),
+        });
       });
     });
 
@@ -293,8 +296,6 @@ describe('ClerkSyncService', () => {
         expect(results).toHaveLength(3);
         expect(clerkClient.users.getUserList).toHaveBeenCalledWith({ limit: 100 });
         expect(syncUserSpy).toHaveBeenCalledTimes(3);
-        
-        syncUserSpy.mockRestore();
       });
 
       it('should sync with custom limit', async () => {
@@ -305,15 +306,13 @@ describe('ClerkSyncService', () => {
 
         (clerkClient.users.getUserList as jest.Mock).mockResolvedValue(mockClerkUsers);
 
-        const syncUserSpy = jest.spyOn(ClerkSyncService, 'syncUser')
+        jest.spyOn(ClerkSyncService, 'syncUser')
           .mockResolvedValue(mockUserProfile as any);
 
         const results = await ClerkSyncService.syncAllUsers(50);
 
         expect(results).toHaveLength(50);
         expect(clerkClient.users.getUserList).toHaveBeenCalledWith({ limit: 50 });
-        
-        syncUserSpy.mockRestore();
       });
 
       it('should handle partial failures gracefully', async () => {
@@ -326,7 +325,7 @@ describe('ClerkSyncService', () => {
         (clerkClient.users.getUserList as jest.Mock).mockResolvedValue(mockClerkUsers);
 
         // Mock syncUser to fail for user2
-        const syncUserSpy = jest.spyOn(ClerkSyncService, 'syncUser')
+        jest.spyOn(ClerkSyncService, 'syncUser')
           .mockResolvedValueOnce({ ...mockUserProfile, user_id: 'user1' } as any)
           .mockRejectedValueOnce(new Error('Sync failed for user2'))
           .mockResolvedValueOnce({ ...mockUserProfile, user_id: 'user3' } as any);
@@ -336,8 +335,6 @@ describe('ClerkSyncService', () => {
         expect(results).toHaveLength(2); // Only successful syncs
         expect(results[0]?.user_id).toBe('user1');
         expect(results[1]?.user_id).toBe('user3');
-        
-        syncUserSpy.mockRestore();
       });
 
       it('should handle empty user list', async () => {
@@ -386,8 +383,6 @@ describe('ClerkSyncService', () => {
 
         expect(results).toHaveLength(1000);
         expect(syncUserSpy).toHaveBeenCalledTimes(1000);
-        
-        syncUserSpy.mockRestore();
       });
 
       it('should handle all syncs failing', async () => {
@@ -398,15 +393,13 @@ describe('ClerkSyncService', () => {
 
         (clerkClient.users.getUserList as jest.Mock).mockResolvedValue(mockClerkUsers);
 
-        const syncUserSpy = jest.spyOn(ClerkSyncService, 'syncUser')
+        jest.spyOn(ClerkSyncService, 'syncUser')
           .mockRejectedValue(new Error('Sync failed'));
 
         const results = await ClerkSyncService.syncAllUsers();
 
         expect(results).toHaveLength(0);
         expect(results).toEqual([]);
-        
-        syncUserSpy.mockRestore();
       });
     });
   });
@@ -426,8 +419,6 @@ describe('ClerkSyncService', () => {
 
         expect(result).toEqual(mockUserProfile);
         expect(syncUserSpy).toHaveBeenCalledWith('user_new123');
-        
-        syncUserSpy.mockRestore();
       });
 
       it('should handle user.updated webhook', async () => {
@@ -443,8 +434,6 @@ describe('ClerkSyncService', () => {
 
         expect(result).toEqual(mockUserProfile);
         expect(syncUserSpy).toHaveBeenCalledWith('user_update123');
-        
-        syncUserSpy.mockRestore();
       });
 
       it('should handle user.deleted webhook without deleting profile', async () => {
@@ -453,14 +442,10 @@ describe('ClerkSyncService', () => {
           data: { id: 'user_deleted123' },
         };
 
-        const consoleLogSpy = jest.spyOn(console, 'log').mockImplementation();
-
         const result = await ClerkSyncService.handleUserWebhook(webhookData);
 
         expect(result).toBeNull();
-        expect(consoleLogSpy).toHaveBeenCalledWith('User deleted in Clerk: user_deleted123');
-        
-        consoleLogSpy.mockRestore();
+        expect(console.log).toHaveBeenCalledWith('User deleted in Clerk: user_deleted123');
       });
 
       it('should handle unrecognized webhook types', async () => {
@@ -469,14 +454,10 @@ describe('ClerkSyncService', () => {
           data: { id: 'user_test123' },
         };
 
-        const consoleWarnSpy = jest.spyOn(console, 'warn').mockImplementation();
-
         const result = await ClerkSyncService.handleUserWebhook(webhookData);
 
         expect(result).toBeNull();
-        expect(consoleWarnSpy).toHaveBeenCalledWith('Unhandled webhook type: user.custom_event');
-        
-        consoleWarnSpy.mockRestore();
+        expect(console.warn).toHaveBeenCalledWith('Unhandled webhook type: user.custom_event');
       });
     });
 
@@ -487,13 +468,11 @@ describe('ClerkSyncService', () => {
           data: { id: 'user_fail123' },
         };
 
-        const syncUserSpy = jest.spyOn(ClerkSyncService, 'syncUser')
+        jest.spyOn(ClerkSyncService, 'syncUser')
           .mockRejectedValue(new Error('Sync failed'));
 
         await expect(ClerkSyncService.handleUserWebhook(webhookData))
           .rejects.toThrow('Sync failed');
-        
-        syncUserSpy.mockRestore();
       });
 
       it('should throw error when sync fails for user.updated', async () => {
@@ -502,13 +481,11 @@ describe('ClerkSyncService', () => {
           data: { id: 'user_fail123' },
         };
 
-        const syncUserSpy = jest.spyOn(ClerkSyncService, 'syncUser')
+        jest.spyOn(ClerkSyncService, 'syncUser')
           .mockRejectedValue(new Error('Database error'));
 
         await expect(ClerkSyncService.handleUserWebhook(webhookData))
           .rejects.toThrow('Database error');
-        
-        syncUserSpy.mockRestore();
       });
     });
 
@@ -525,23 +502,16 @@ describe('ClerkSyncService', () => {
         await ClerkSyncService.handleUserWebhook(webhookData);
 
         expect(syncUserSpy).toHaveBeenCalledWith(undefined);
-        
-        syncUserSpy.mockRestore();
       });
 
       it('should handle malformed webhook data', async () => {
         const webhookData = {
           type: 'user.created',
           // Missing data field
-        };
-
-        const syncUserSpy = jest.spyOn(ClerkSyncService, 'syncUser')
-          .mockResolvedValue(mockUserProfile as any);
+        } as any;
 
         await expect(ClerkSyncService.handleUserWebhook(webhookData))
           .rejects.toThrow();
-        
-        syncUserSpy.mockRestore();
       });
     });
   });
@@ -551,9 +521,6 @@ describe('ClerkSyncService', () => {
       it('should return true when user is in sync', async () => {
         (clerkClient.users.getUser as jest.Mock).mockResolvedValue(mockClerkUser);
         (prisma.userProfile.findUnique as jest.Mock).mockResolvedValue(mockUserProfile);
-        (mapClerkRoleToUserRole as jest.Mock).mockReturnValue(UserRole.OPS);
-        (extractBusinessUnit as jest.Mock).mockReturnValue('BU002');
-        (extractWarehouseIds as jest.Mock).mockReturnValue(['WH001', 'WH002']);
 
         const result = await ClerkSyncService.isUserInSync('user_test123');
 
@@ -570,9 +537,6 @@ describe('ClerkSyncService', () => {
           ...mockUserProfile,
           role: UserRole.ADMIN, // Different role
         });
-        (mapClerkRoleToUserRole as jest.Mock).mockReturnValue(UserRole.OPS);
-        (extractBusinessUnit as jest.Mock).mockReturnValue('BU002');
-        (extractWarehouseIds as jest.Mock).mockReturnValue(['WH001', 'WH002']);
 
         const result = await ClerkSyncService.isUserInSync('user_test123');
 
@@ -585,9 +549,6 @@ describe('ClerkSyncService', () => {
           ...mockUserProfile,
           business_unit: 'BU001', // Different business unit
         });
-        (mapClerkRoleToUserRole as jest.Mock).mockReturnValue(UserRole.OPS);
-        (extractBusinessUnit as jest.Mock).mockReturnValue('BU002');
-        (extractWarehouseIds as jest.Mock).mockReturnValue(['WH001', 'WH002']);
 
         const result = await ClerkSyncService.isUserInSync('user_test123');
 
@@ -600,9 +561,6 @@ describe('ClerkSyncService', () => {
           ...mockUserProfile,
           warehouse_ids: ['WH001'], // Different warehouse IDs
         });
-        (mapClerkRoleToUserRole as jest.Mock).mockReturnValue(UserRole.OPS);
-        (extractBusinessUnit as jest.Mock).mockReturnValue('BU002');
-        (extractWarehouseIds as jest.Mock).mockReturnValue(['WH001', 'WH002']);
 
         const result = await ClerkSyncService.isUserInSync('user_test123');
 
@@ -615,9 +573,6 @@ describe('ClerkSyncService', () => {
           ...mockUserProfile,
           warehouse_ids: ['WH002', 'WH001'], // Same IDs, different order
         });
-        (mapClerkRoleToUserRole as jest.Mock).mockReturnValue(UserRole.OPS);
-        (extractBusinessUnit as jest.Mock).mockReturnValue('BU002');
-        (extractWarehouseIds as jest.Mock).mockReturnValue(['WH001', 'WH002']);
 
         const result = await ClerkSyncService.isUserInSync('user_test123');
 
@@ -648,14 +603,11 @@ describe('ClerkSyncService', () => {
         (clerkClient.users.getUser as jest.Mock).mockRejectedValue(
           new Error('Clerk API error')
         );
-        const consoleErrorSpy = jest.spyOn(console, 'error').mockImplementation();
 
         const result = await ClerkSyncService.isUserInSync('user_test123');
 
         expect(result).toBe(false);
-        expect(consoleErrorSpy).toHaveBeenCalled();
-        
-        consoleErrorSpy.mockRestore();
+        expect(console.error).toHaveBeenCalled();
       });
 
       it('should return false when database query fails', async () => {
@@ -663,14 +615,11 @@ describe('ClerkSyncService', () => {
         (prisma.userProfile.findUnique as jest.Mock).mockRejectedValue(
           new Error('Database error')
         );
-        const consoleErrorSpy = jest.spyOn(console, 'error').mockImplementation();
 
         const result = await ClerkSyncService.isUserInSync('user_test123');
 
         expect(result).toBe(false);
-        expect(consoleErrorSpy).toHaveBeenCalled();
-        
-        consoleErrorSpy.mockRestore();
+        expect(console.error).toHaveBeenCalled();
       });
     });
 
@@ -689,9 +638,6 @@ describe('ClerkSyncService', () => {
           ...mockUserProfile,
           warehouse_ids: [],
         });
-        (mapClerkRoleToUserRole as jest.Mock).mockReturnValue(UserRole.OPS);
-        (extractBusinessUnit as jest.Mock).mockReturnValue('BU002');
-        (extractWarehouseIds as jest.Mock).mockReturnValue([]);
 
         const result = await ClerkSyncService.isUserInSync('user_test123');
 
@@ -715,9 +661,6 @@ describe('ClerkSyncService', () => {
           business_unit: 'BU001',
           warehouse_ids: [],
         });
-        (mapClerkRoleToUserRole as jest.Mock).mockReturnValue(UserRole.READ_ONLY);
-        (extractBusinessUnit as jest.Mock).mockReturnValue('BU001');
-        (extractWarehouseIds as jest.Mock).mockReturnValue([]);
 
         const result = await ClerkSyncService.isUserInSync('user_test123');
 
@@ -740,8 +683,6 @@ describe('ClerkSyncService', () => {
           where: { user_id: 'user_test123' },
         });
         expect(syncUserSpy).not.toHaveBeenCalled();
-        
-        syncUserSpy.mockRestore();
       });
 
       it('should create new user profile when not found', async () => {
@@ -754,8 +695,6 @@ describe('ClerkSyncService', () => {
 
         expect(result).toEqual(mockUserProfile);
         expect(syncUserSpy).toHaveBeenCalledWith('user_test123');
-        
-        syncUserSpy.mockRestore();
       });
     });
 
@@ -772,13 +711,11 @@ describe('ClerkSyncService', () => {
       it('should throw error when sync fails for new user', async () => {
         (prisma.userProfile.findUnique as jest.Mock).mockResolvedValue(null);
 
-        const syncUserSpy = jest.spyOn(ClerkSyncService, 'syncUser')
+        jest.spyOn(ClerkSyncService, 'syncUser')
           .mockRejectedValue(new Error('Sync failed'));
 
         await expect(ClerkSyncService.getOrCreateUserProfile('user_test123'))
           .rejects.toThrow('Sync failed');
-        
-        syncUserSpy.mockRestore();
       });
     });
 
@@ -800,22 +737,16 @@ describe('ClerkSyncService', () => {
         expect(results[0]).toEqual(mockUserProfile);
         expect(results[1]).toEqual(mockUserProfile);
         expect(syncUserSpy).toHaveBeenCalledTimes(1); // Only called once
-        
-        syncUserSpy.mockRestore();
       });
     });
   });
 
   describe('Console logging', () => {
     it('should log errors appropriately', async () => {
-      const consoleErrorSpy = jest.spyOn(console, 'error').mockImplementation();
-      const consoleLogSpy = jest.spyOn(console, 'log').mockImplementation();
-      const consoleWarnSpy = jest.spyOn(console, 'warn').mockImplementation();
-
       // Test error logging in syncUser
       (clerkClient.users.getUser as jest.Mock).mockRejectedValue(new Error('Test error'));
       await expect(ClerkSyncService.syncUser('user_test123')).rejects.toThrow();
-      expect(consoleErrorSpy).toHaveBeenCalledWith(
+      expect(console.error).toHaveBeenCalledWith(
         'Failed to sync user user_test123:',
         expect.any(Error)
       );
@@ -825,18 +756,14 @@ describe('ClerkSyncService', () => {
         type: 'user.deleted',
         data: { id: 'user_deleted' },
       });
-      expect(consoleLogSpy).toHaveBeenCalledWith('User deleted in Clerk: user_deleted');
+      expect(console.log).toHaveBeenCalledWith('User deleted in Clerk: user_deleted');
 
       // Test warn for unhandled webhook type
       await ClerkSyncService.handleUserWebhook({
         type: 'user.unknown',
         data: { id: 'user_test' },
       });
-      expect(consoleWarnSpy).toHaveBeenCalledWith('Unhandled webhook type: user.unknown');
-
-      consoleErrorSpy.mockRestore();
-      consoleLogSpy.mockRestore();
-      consoleWarnSpy.mockRestore();
+      expect(console.warn).toHaveBeenCalledWith('Unhandled webhook type: user.unknown');
     });
   });
 });

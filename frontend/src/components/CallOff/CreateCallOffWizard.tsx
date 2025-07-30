@@ -371,6 +371,7 @@ export function CreateCallOffWizard({ open, onClose, onSuccess, initialCounterpa
       fullWidth
       disableRestoreFocus
       keepMounted={false}
+      disableEnforceFocus
       aria-labelledby="create-call-off-dialog-title"
     >
       <DialogTitle id="create-call-off-dialog-title">

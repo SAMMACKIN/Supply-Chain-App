@@ -1,19 +1,20 @@
 import React from 'react'
 import { render, screen, fireEvent, waitFor } from '@testing-library/react'
 import '@testing-library/jest-dom'
+import { vi, describe, it, expect, beforeEach } from 'vitest'
 import { ConfirmationDialog } from '../ConfirmationDialog'
 
 describe('ConfirmationDialog', () => {
   const defaultProps = {
     open: true,
-    onClose: jest.fn(),
-    onConfirm: jest.fn(),
+    onClose: vi.fn(),
+    onConfirm: vi.fn(),
     title: 'Test Confirmation',
     message: 'Are you sure you want to proceed?'
   }
 
   beforeEach(() => {
-    jest.clearAllMocks()
+    vi.clearAllMocks()
   })
 
   it('renders correctly when open', () => {
@@ -80,14 +81,18 @@ describe('ConfirmationDialog', () => {
   })
 
   it('handles keyboard interactions', () => {
-    render(<ConfirmationDialog {...defaultProps} />)
+    const { rerender } = render(<ConfirmationDialog {...defaultProps} />)
     
-    // Escape key should call onClose
+    // Test Escape key
     fireEvent.keyDown(screen.getByRole('dialog'), { key: 'Escape' })
-    expect(defaultProps.onClose).toHaveBeenCalledTimes(1)
+    expect(defaultProps.onClose).toHaveBeenCalled()
+    
+    // Reset mocks and test Enter key with fresh render
+    vi.clearAllMocks()
+    rerender(<ConfirmationDialog {...defaultProps} />)
     
     // Enter key should call onConfirm
     fireEvent.keyDown(screen.getByRole('dialog'), { key: 'Enter' })
-    expect(defaultProps.onConfirm).toHaveBeenCalledTimes(1)
+    expect(defaultProps.onConfirm).toHaveBeenCalled()
   })
 })

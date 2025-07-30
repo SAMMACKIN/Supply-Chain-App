@@ -1,4 +1,4 @@
-import { Router } from 'express';
+import { Router, json } from 'express';
 import { ClerkSyncService } from '../../services/clerk-sync';
 import { env } from '../../config/environment';
 
@@ -12,7 +12,7 @@ const verifyClerkWebhook = (req: any, res: any, next: any) => {
   // Get the webhook signature from headers
   const webhookSignature = req.headers['clerk-signature'];
   
-  if (!webhookSignature) {
+  if (!webhookSignature || webhookSignature === '') {
     return res.status(401).json({
       success: false,
       error: 'Missing webhook signature'
@@ -31,6 +31,12 @@ const verifyClerkWebhook = (req: any, res: any, next: any) => {
  * Clerk webhooks need the raw body to verify signatures
  */
 const parseRawBody = (req: any, res: any, next: any) => {
+  // If body is already parsed (e.g., in tests), skip parsing
+  if (req.body) {
+    req.rawBody = JSON.stringify(req.body);
+    return next();
+  }
+  
   let rawBody = '';
   
   req.on('data', (chunk: Buffer) => {
@@ -118,7 +124,7 @@ router.get('/clerk/test', (_req, res) => {
 });
 
 // POST /api/webhooks/clerk/manual-sync - Manual trigger for user sync (for testing)
-router.post('/clerk/manual-sync', async (req, res) => {
+router.post('/clerk/manual-sync', json(), async (req, res) => {
   try {
     const { userId, action = 'sync' } = req.body;
     

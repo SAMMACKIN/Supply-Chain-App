@@ -80,7 +80,7 @@ const mockQuota = {
 
 const mockCallOff = {
   call_off_id: '323e4567-e89b-12d3-a456-426614174000',
-  call_off_number: 'CO-2025-123456',
+  call_off_number: 'CO-2025-1234',
   quota_id: mockQuota.quota_id,
   counterparty_id: mockQuota.counterparty_id,
   direction: 'BUY',
@@ -323,7 +323,7 @@ describe('Call-Offs API Routes', () => {
       // Verify call-off creation parameters
       expect(prisma.callOff.create).toHaveBeenCalledWith({
         data: {
-          call_off_number: expect.stringMatching(/^CO-\d{4}-\d{6}$/),
+          call_off_number: expect.stringMatching(/^CO-\d{4}-\d{4}$/),
           quota_id: validCallOffData.quota_id,
           counterparty_id: mockQuota.counterparty_id,
           direction: mockQuota.direction,
@@ -1012,7 +1012,7 @@ describe('Call-Offs API Routes', () => {
       expect(prisma.callOff.create).toHaveBeenCalledWith(
         expect.objectContaining({
           data: expect.objectContaining({
-            call_off_number: expect.stringMatching(/^CO-\d{4}-\d{6}$/),
+            call_off_number: expect.stringMatching(/^CO-\d{4}-\d{4}$/),
           }),
         })
       );

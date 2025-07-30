@@ -68,6 +68,9 @@ export function extractWarehouseIds(metadata?: ClerkUserMetadata): string[] {
  * @returns boolean indicating if role is valid
  */
 export function isValidRole(role: string): boolean {
+  if (!role || typeof role !== 'string') {
+    return false;
+  }
   const validRoles = ['admin', 'ops', 'operations', 'trade', 'trader', 'planner', 'read_only', 'readonly', 'viewer'];
   return validRoles.includes(role.toLowerCase().trim());
 }

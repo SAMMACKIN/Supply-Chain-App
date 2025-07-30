@@ -243,10 +243,18 @@ export async function fetchCallOff(id: string): Promise<CallOff> {
 
 export async function createCallOff(data: CreateCallOffRequest): Promise<CallOff> {
   if (USE_API) {
-    return await apiCall<CallOff>('/call-offs', {
-      method: 'POST',
-      body: JSON.stringify(data),
-    })
+    try {
+      console.log('Creating call-off with data:', data)
+      const result = await apiCall<CallOff>('/call-offs', {
+        method: 'POST',
+        body: JSON.stringify(data),
+      })
+      console.log('Call-off created successfully:', result)
+      return result
+    } catch (error) {
+      console.error('Failed to create call-off:', error)
+      throw error
+    }
   }
   
   // Create mock call-off
@@ -275,12 +283,16 @@ export async function createCallOff(data: CreateCallOffRequest): Promise<CallOff
 export async function updateCallOff(id: string, updates: Partial<CallOff>): Promise<CallOff> {
   if (USE_API) {
     try {
-      return await apiCall<CallOff>(`/call-offs/${id}`, {
+      console.log('Updating call-off', id, 'with data:', updates)
+      const result = await apiCall<CallOff>(`/call-offs/${id}`, {
         method: 'PATCH',
         body: JSON.stringify(updates),
       })
+      console.log('Call-off updated successfully:', result)
+      return result
     } catch (error) {
-      console.warn('API call failed, updating mock call-off:', error)
+      console.error('Failed to update call-off:', error)
+      throw error
     }
   }
   
