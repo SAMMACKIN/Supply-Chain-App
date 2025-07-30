@@ -29,6 +29,8 @@ import {
 } from '@mui/icons-material'
 import { fetchCallOffs, confirmCallOff, cancelCallOff, fulfillCallOff } from '../../services/calloff-api'
 import { useToast } from '../../hooks/useToast'
+import { useConfirmation } from '../../hooks/useConfirmation'
+import { ConfirmationDialog } from '../common/ConfirmationDialog'
 import type { CallOff } from '../../types/calloff'
 
 interface CallOffListProps {
@@ -40,6 +42,7 @@ interface CallOffListProps {
 export function CallOffList({ onCreateCallOff, onViewCallOff, onEditCallOff }: CallOffListProps) {
   const toast = useToast()
   const queryClient = useQueryClient()
+  const { confirmAction, confirmDestructive, dialogProps } = useConfirmation()
   
   const {
     data: callOffs,
@@ -93,6 +96,41 @@ export function CallOffList({ onCreateCallOff, onViewCallOff, onEditCallOff }: C
       case 'FULFILLED': return 'success'
       case 'CANCELLED': return 'error'
       default: return 'default'
+    }
+  }
+
+  // Enhanced action handlers with confirmation
+  const handleConfirmCallOff = async (callOff: CallOff) => {
+    const confirmed = await confirmAction(
+      'Confirm Call-Off',
+      `Are you sure you want to confirm call-off ${callOff.call_off_number}? This action cannot be undone and will make the call-off available for fulfillment.`
+    )
+    
+    if (confirmed) {
+      confirmMutation.mutate(callOff.call_off_id)
+    }
+  }
+
+  const handleCancelCallOff = async (callOff: CallOff) => {
+    const confirmed = await confirmDestructive(
+      'Cancel Call-Off',
+      `Are you sure you want to cancel call-off ${callOff.call_off_number}? This action cannot be undone and will permanently cancel the call-off.`,
+      'Cancel Call-Off'
+    )
+    
+    if (confirmed) {
+      cancelMutation.mutate({ id: callOff.call_off_id })
+    }
+  }
+
+  const handleFulfillCallOff = async (callOff: CallOff) => {
+    const confirmed = await confirmAction(
+      'Fulfill Call-Off',
+      `Are you sure you want to fulfill call-off ${callOff.call_off_number}? This will mark the call-off as completed and finalize all associated shipments.`
+    )
+    
+    if (confirmed) {
+      fulfillMutation.mutate(callOff.call_off_id)
     }
   }
 
@@ -255,7 +293,7 @@ export function CallOffList({ onCreateCallOff, onViewCallOff, onEditCallOff }: C
                               <IconButton
                                 size="small"
                                 color="success"
-                                onClick={() => confirmMutation.mutate(callOff.call_off_id)}
+                                onClick={() => handleConfirmCallOff(callOff)}
                                 disabled={confirmMutation.isPending}
                               >
                                 <ConfirmIcon fontSize="small" />
@@ -265,7 +303,7 @@ export function CallOffList({ onCreateCallOff, onViewCallOff, onEditCallOff }: C
                               <IconButton
                                 size="small"
                                 color="error"
-                                onClick={() => cancelMutation.mutate({ id: callOff.call_off_id })}
+                                onClick={() => handleCancelCallOff(callOff)}
                                 disabled={cancelMutation.isPending}
                               >
                                 <CancelIcon fontSize="small" />
@@ -279,7 +317,7 @@ export function CallOffList({ onCreateCallOff, onViewCallOff, onEditCallOff }: C
                               <IconButton
                                 size="small"
                                 color="primary"
-                                onClick={() => fulfillMutation.mutate(callOff.call_off_id)}
+                                onClick={() => handleFulfillCallOff(callOff)}
                                 disabled={fulfillMutation.isPending}
                               >
                                 <FulfillIcon fontSize="small" />
@@ -289,7 +327,7 @@ export function CallOffList({ onCreateCallOff, onViewCallOff, onEditCallOff }: C
                               <IconButton
                                 size="small"
                                 color="error"
-                                onClick={() => cancelMutation.mutate({ id: callOff.call_off_id })}
+                                onClick={() => handleCancelCallOff(callOff)}
                                 disabled={cancelMutation.isPending}
                               >
                                 <CancelIcon fontSize="small" />
@@ -306,6 +344,9 @@ export function CallOffList({ onCreateCallOff, onViewCallOff, onEditCallOff }: C
           </Table>
         </TableContainer>
       </Card>
+
+      {/* Confirmation Dialog */}
+      <ConfirmationDialog {...dialogProps} />
     </Box>
   )
 }
