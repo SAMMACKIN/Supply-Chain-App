@@ -77,7 +77,6 @@ export interface CreateCallOffRequest {
   quota_id: string
   bundle_qty: number
   requested_delivery_date?: string
-  delivery_address_id?: string
 }
 
 export interface CreateCallOffResponse {
