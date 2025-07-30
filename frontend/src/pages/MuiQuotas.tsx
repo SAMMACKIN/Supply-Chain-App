@@ -22,7 +22,9 @@ import {
   TableRow,
   Paper,
   IconButton,
-  Tooltip
+  Tooltip,
+  LinearProgress,
+  Skeleton
 } from '@mui/material'
 import {
   Search as SearchIcon,
@@ -35,6 +37,8 @@ import { fetchAvailableQuotas } from '../services/calloff-api'
 import { fetchQuotas } from '../lib/api'
 import type { Quota } from '../types/calloff'
 import { CreateCallOffWizard } from '../components/CallOff/CreateCallOffWizard'
+import { useBatchQuotaBalances } from '../hooks/useBatchQuotaBalances'
+import { formatQuantity, formatPercentage, getProgressBarSx } from '../utils/quota-balance-utils'
 
 export function MuiQuotas() {
   const theme = useTheme()
@@ -53,13 +57,16 @@ export function MuiQuotas() {
     staleTime: 5 * 60 * 1000, // 5 minutes
   })
 
+  // Fetch quota balances for all quotas
+  const { quotasWithBalances, isLoading: balancesLoading } = useBatchQuotaBalances(quotas || [])
+
   const getDirectionColor = (direction: string) => {
     return direction === 'BUY' ? 'success' : 'warning'
   }
 
   const filteredData = useMemo(() => {
-    if (!quotas || !searchText) return quotas || []
-    return quotas.filter(quota =>
+    if (!quotasWithBalances || !searchText) return quotasWithBalances || []
+    return quotasWithBalances.filter(quota =>
       quota.quota_id.toLowerCase().includes(searchText.toLowerCase()) ||
       quota.metal_code.toLowerCase().includes(searchText.toLowerCase()) ||
       quota.direction.toLowerCase().includes(searchText.toLowerCase()) ||
@@ -67,7 +74,7 @@ export function MuiQuotas() {
       quota.counterparty?.company_name.toLowerCase().includes(searchText.toLowerCase()) ||
       quota.counterparty?.company_code.toLowerCase().includes(searchText.toLowerCase())
     )
-  }, [quotas, searchText])
+  }, [quotasWithBalances, searchText])
 
   if (isLoading) {
     return (
@@ -151,6 +158,9 @@ export function MuiQuotas() {
                 <TableCell>Metal</TableCell>
                 <TableCell>Direction</TableCell>
                 <TableCell>Quantity</TableCell>
+                <TableCell>Available Capacity</TableCell>
+                <TableCell>Utilization</TableCell>
+                <TableCell>Status</TableCell>
                 <TableCell>Period</TableCell>
                 <TableCell>Tolerance</TableCell>
                 <TableCell>Incoterm</TableCell>
@@ -161,7 +171,7 @@ export function MuiQuotas() {
             <TableBody>
               {filteredData.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={9} align="center" sx={{ py: 4 }}>
+                  <TableCell colSpan={12} align="center" sx={{ py: 4 }}>
                     <Typography variant="body1" color="text.secondary">
                       No quotas found. {searchText ? 'Try adjusting your search.' : 'Create your first quota to get started.'}
                     </Typography>
@@ -212,6 +222,88 @@ export function MuiQuotas() {
                         {quota.qty_t} tonnes
                       </Typography>
                     </TableCell>
+                    
+                    {/* Available Capacity Column */}
+                    <TableCell>
+                      {quota.balance_loading ? (
+                        <Skeleton variant="rectangular" width={120} height={20} />
+                      ) : quota.balance_error ? (
+                        <Typography variant="caption" color="error">
+                          Error loading
+                        </Typography>
+                      ) : quota.balance ? (
+                        <Box>
+                          <Typography variant="body2" sx={{ fontWeight: 500, mb: 0.5 }}>
+                            {formatQuantity(quota.balance.remaining_qty_tonnes)}
+                          </Typography>
+                          <LinearProgress
+                            variant="determinate"
+                            value={Math.min(quota.balance.capacity_percentage, 100)}
+                            sx={{
+                              height: 6,
+                              borderRadius: 3,
+                              ...getProgressBarSx(quota.balance.utilization_pct)
+                            }}
+                          />
+                        </Box>
+                      ) : (
+                        <Typography variant="body2" color="text.secondary">
+                          -
+                        </Typography>
+                      )}
+                    </TableCell>
+                    
+                    {/* Utilization Column */}
+                    <TableCell>
+                      {quota.balance_loading ? (
+                        <Skeleton variant="rectangular" width={60} height={20} />
+                      ) : quota.balance_error ? (
+                        <Typography variant="caption" color="error">
+                          Error
+                        </Typography>
+                      ) : quota.balance ? (
+                        <Typography 
+                          variant="body2" 
+                          sx={{ 
+                            fontWeight: 500,
+                            color: quota.balance.utilization_pct >= 100 ? 'error.main' : 
+                                   quota.balance.utilization_pct >= 90 ? 'warning.main' : 
+                                   'text.primary'
+                          }}
+                        >
+                          {formatPercentage(quota.balance.utilization_pct)}
+                        </Typography>
+                      ) : (
+                        <Typography variant="body2" color="text.secondary">
+                          -
+                        </Typography>
+                      )}
+                    </TableCell>
+                    
+                    {/* Status Column */}
+                    <TableCell>
+                      {quota.balance_loading ? (
+                        <Skeleton variant="rectangular" width={80} height={24} />
+                      ) : quota.balance_error ? (
+                        <Chip label="Error" color="error" size="small" />
+                      ) : quota.balance ? (
+                        <Chip 
+                          label={
+                            quota.balance.status === 'available' ? 'Available' :
+                            quota.balance.status === 'low_stock' ? 'Low Stock' :
+                            'Over-allocated'
+                          }
+                          color={quota.balance.status_color}
+                          size="small"
+                          variant="outlined"
+                        />
+                      ) : (
+                        <Typography variant="body2" color="text.secondary">
+                          -
+                        </Typography>
+                      )}
+                    </TableCell>
+                    
                     <TableCell>
                       <Typography variant="body2" color="text.secondary">
                         {format(new Date(quota.period_month), 'MMM yyyy')}
