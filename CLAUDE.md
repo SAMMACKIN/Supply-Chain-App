@@ -1,73 +1,84 @@
 # Supply Chain App Migration Status
 
 ## Current Situation (July 2025)
-Migrating from Supabase to Railway + Vercel due to persistent Supabase issues (pooler problems, migration failures, schema sync issues).
+Successfully migrated from Supabase to Railway + Vercel. The app is now running in development with Railway backend and Vercel frontend.
 
 ## Architecture
-- **Frontend**: React/Vite → Vercel (existing)
-- **Backend**: Express/TypeScript → Railway (new)
-- **Database**: PostgreSQL → Railway (migrated from Supabase)
-- **Auth**: Temporarily disabled (was Supabase → will be Clerk)
+- **Frontend**: React/Vite → Vercel ✅
+- **Backend**: Express/TypeScript → Railway ✅ 
+- **Database**: PostgreSQL → Railway ✅
+- **Auth**: Temporarily disabled (MockAuth) - Next: Clerk
 
 ## Completed ✅
 1. Database exported from Supabase dev (20 quotas, 10 counterparties)
 2. Database imported to Railway PostgreSQL
 3. Backend API created with Express/Prisma matching all Edge Functions
-4. Railway project set up with PostgreSQL
-5. Environment files created for easy configuration
-6. Auth temporarily disabled for easier testing
-7. TypeScript/Prisma moved to dependencies for Railway build
+4. Railway project deployed successfully
+5. Environment variables configured (VITE_API_URL)
+6. All Supabase dependencies removed from frontend
+7. Fixed all database schema mismatches:
+   - Enum type mappings (Direction, CallOffStatus, ShipmentLineStatus)
+   - Field name differences (qty_t vs bundle_qty, period_month vs month)
+   - Removed non-existent fields (delivery_location, fulfillment_location)
+8. Added quota balance endpoint for frontend compatibility
+9. Fixed route ordering issues
+10. Call-off creation working with proper validation
 
-## Current Status 🔄
-**Task 039: Supabase to Railway Migration - Backend deployment failing**
-- Railway can't find backend directory
-- Need to check root directory setting in Railway
-- See: `/docs/tasks/task-039-supabase-to-railway-migration.md`
+## Current Status ✅
+**Task 039: Supabase to Railway Migration - COMPLETE**
+- Railway backend deployed and running
+- Vercel frontend connected to Railway API
+- All core functionality working:
+  - View quotas with available quantities
+  - Create call-offs from quotas with capacity
+  - View call-off details with quota information
+  - Create shipment lines
 
 ## Next Steps (Priority Order)
 
-### Today - Get Dev Working
-1. **Verify Railway Deploy** ⏳
-   - Check Railway dashboard for green deployment
-   - If failed, check build logs
+### Phase 1 - Authentication (High Priority)
+1. **Set up Clerk Authentication**
+   - Create Clerk account and project
+   - Install @clerk/clerk-sdk-node and @clerk/react
+   - Configure Clerk environment variables
+   - Replace MockAuth with ClerkProvider
+   - Update backend auth middleware
+   - Create user profile sync logic
 
-2. **Test Backend**
-   ```bash
-   curl https://supply-chain-app-development.up.railway.app/health
-   curl https://supply-chain-app-development.up.railway.app/api/quotas
-   ```
+2. **User Profile Management**
+   - Sync Clerk users to user_profiles table
+   - Map Clerk metadata to UserRole enum (OPS, TRADE, PLANNER)
+   - Set up role-based permissions
 
-3. **Configure Vercel**
-   - Add: `VITE_API_URL=https://supply-chain-app-development.up.railway.app/api`
-   - To Preview environment variables
-   - Redeploy
+### Phase 2 - Data Integrity (Medium Priority)
+3. **Set up Prisma Migrations**
+   - Initialize Prisma migrations from current schema
+   - Create migration for any pending schema changes
+   - Document migration process
 
-4. **Test One Component**
-   - Update `MuiQuotas.tsx` to use `fetchQuotas()` from `lib/api.ts`
-   - Verify quotas load from Railway
+4. **Data Validation & Constraints**
+   - Add proper foreign key constraints
+   - Validate business rules (quota limits, date ranges)
+   - Add database triggers for audit trails
 
-### Tomorrow - Complete Migration
-5. **Migrate Core Components**
-   - `CallOffList.tsx` - List call-offs
-   - `CreateCallOffForm.tsx` - Create new call-offs
-   - `CallOffDetailView.tsx` - View/edit call-offs
-   - `ShipmentLineList.tsx` - Manage shipments
+### Phase 3 - Production Ready (Lower Priority)
+5. **Production Environment Setup**
+   - Set up Railway production environment
+   - Configure production database
+   - Set up monitoring (Sentry, LogRocket)
+   - Configure backup strategy
 
-6. **Remove Supabase**
-   - Uninstall @supabase/supabase-js
-   - Delete supabase config files
-   - Remove Supabase env vars from Vercel
+6. **Performance Optimization**
+   - Add Redis for caching quota balances
+   - Implement database query optimization
+   - Add API rate limiting
+   - Set up CDN for static assets
 
-### Later - Production Ready
-7. **Add Authentication**
-   - Set up Clerk
-   - Update AuthProvider
-   - Protect API routes
-
-8. **Clean Up**
-   - Delete old migration files
-   - Set up Prisma migrations properly
-   - Configure production environment
+7. **Clean Up & Documentation**
+   - Delete old migration files and unused code
+   - Document API endpoints
+   - Create deployment guide
+   - Set up CI/CD pipeline
 
 ## Quick Commands
 ```bash
@@ -83,19 +94,44 @@ postgresql://postgres:osmmuWpxZTqxWPlTXREBLQarlhinzybq@centerbeam.proxy.rlwy.net
 
 ## Environment Variables Status
 - ✅ Railway: Has DATABASE_URL, NODE_ENV, PORT, FRONTEND_URL
-- ⏳ Vercel: Needs VITE_API_URL added
+- ✅ Vercel: Has VITE_API_URL configured
 
-## Files to Update for Migration
-1. `frontend/src/pages/MuiQuotas.tsx` - Test with quotas first
-2. `frontend/src/pages/MuiCallOffs.tsx` - Call-off list
-3. `frontend/src/components/CallOff/CreateCallOffForm.tsx` - Create form
-4. `frontend/src/components/CallOff/CallOffDetailView.tsx` - Details view
-5. `frontend/src/services/calloff-api.ts` - Main API service
+## Known Issues & Workarounds
+1. **Over-allocated Quotas**: Some test quotas have more allocated than available
+   - Example: "Global Metals Ltd - AL" has -3504 available
+   - Workaround: Use quotas with positive availability
+   
+2. **Call-off Number Format**: Database constraint expects CO-YYYY-NNNN (4 digits)
+   - Current: Random 4-digit number (1000-9999)
+   - Consider: Sequential numbering for production
+
+3. **Mock Authentication**: Using UUID 00000000-0000-0000-0000-000000000000
+   - All actions attributed to this "dev user"
+   - Needs proper user tracking after Clerk integration
 
 ## Success Metrics
-- [ ] Backend health check returns ok
-- [ ] Quotas load from Railway API
-- [ ] Can create new call-offs
-- [ ] Can view/edit call-offs
-- [ ] All components migrated
-- [ ] Supabase removed
+- [x] Backend health check returns ok
+- [x] Quotas load from Railway API
+- [x] Can create new call-offs
+- [x] Can view/edit call-offs
+- [x] All components migrated
+- [x] Supabase removed
+
+## API Endpoints
+- `GET /health` - Health check
+- `GET /api/quotas` - List quotas with balances
+- `GET /api/quotas/:id` - Get single quota
+- `GET /api/quotas/:id/balance` - Get quota balance details
+- `GET /api/quotas/filters/counterparties` - List counterparties with quotas
+- `GET /api/call-offs` - List call-offs
+- `GET /api/call-offs/:id` - Get call-off details
+- `POST /api/call-offs` - Create call-off
+- `PATCH /api/call-offs/:id` - Update call-off
+- `POST /api/call-offs/:id/confirm` - Confirm call-off
+- `POST /api/call-offs/:id/cancel` - Cancel call-off
+- `POST /api/call-offs/:id/fulfill` - Fulfill call-off
+- `GET /api/call-offs/:id/shipment-lines` - List shipment lines
+- `POST /api/call-offs/:id/shipment-lines` - Create shipment line
+- `PATCH /api/shipment-lines/:id` - Update shipment line
+- `DELETE /api/shipment-lines/:id` - Delete shipment line
+- `GET /api/counterparties` - List counterparties
