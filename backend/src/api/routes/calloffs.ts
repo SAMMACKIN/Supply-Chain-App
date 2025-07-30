@@ -19,7 +19,7 @@ const updateCallOffSchema = z.object({
 
 const generateCallOffNumber = (): string => {
   const year = new Date().getFullYear();
-  const randomNum = Math.floor(Math.random() * 9000) + 1000; // 4-digit number 1000-9999
+  const randomNum = Math.floor(Math.random() * 900000) + 100000; // 6-digit number 100000-999999
   return `CO-${year}-${randomNum}`;
 };
 

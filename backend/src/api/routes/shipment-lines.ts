@@ -101,13 +101,23 @@ router.patch('/:id', requireAuth, async (req, res) => {
   const { id } = req.params;
   const data = updateShipmentLineSchema.parse(req.body);
   
+  const updateData: any = {
+    bundle_qty: data.bundle_qty,
+    metal_code: data.metal_code,
+    destination_party_id: data.destination_party_id,
+    delivery_location: data.delivery_location,
+    notes: data.notes,
+    expected_ship_date: data.expected_ship_date ? new Date(data.expected_ship_date) : undefined,
+    requested_delivery_date: data.requested_delivery_date ? new Date(data.requested_delivery_date) : undefined,
+  };
+  
+  if (data.status) {
+    updateData.status = data.status;
+  }
+  
   const shipmentLine = await prisma.shipmentLine.update({
     where: { shipment_line_id: id },
-    data: {
-      ...data,
-      expected_ship_date: data.expected_ship_date ? new Date(data.expected_ship_date) : undefined,
-      requested_delivery_date: data.requested_delivery_date ? new Date(data.requested_delivery_date) : undefined,
-    },
+    data: updateData,
   });
   
   res.json({

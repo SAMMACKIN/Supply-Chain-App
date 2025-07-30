@@ -137,7 +137,7 @@ router.get('/:id/balance', requireAuth, async (req, res): Promise<void> => {
   const consumedBundles = quota.call_offs.reduce((sum, co) => sum + co.bundle_qty, 0);
   const remainingQtyTonnes = quota.qty_t - consumedBundles;
   const utilizationPct = (consumedBundles / quota.qty_t) * 100;
-  const toleranceQty = (quota.qty_t * (quota.tolerance_pct || 0)) / 100;
+  const toleranceQty = (quota.qty_t * Number(quota.tolerance_pct || 0)) / 100;
   
   let toleranceStatus: 'WITHIN_LIMITS' | 'OVER_QUOTA' | 'OVER_TOLERANCE' = 'WITHIN_LIMITS';
   if (consumedBundles > quota.qty_t) {

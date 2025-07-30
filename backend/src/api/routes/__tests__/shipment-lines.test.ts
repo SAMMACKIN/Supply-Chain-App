@@ -721,7 +721,7 @@ describe('Shipment Lines API Routes', () => {
     });
 
     it('should handle call-off with maximum number of shipment lines', async () => {
-      const manyShipmentLines = Array(20).fill(null).map((_, i) => ({
+      const manyShipmentLines = Array(20).fill(null).map(() => ({
         bundle_qty: 5,
       }));
 
