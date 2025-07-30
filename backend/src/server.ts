@@ -21,6 +21,7 @@ import shipmentLineRoutes from './api/routes/shipment-lines';
 import authRoutes from './api/routes/auth';
 import diagnosticRoutes from './api/routes/diagnostic';
 import counterpartyRoutes from './api/routes/counterparties';
+import webhookRoutes from './api/routes/webhooks';
 
 const app = express();
 const PORT = parseInt(process.env.PORT || '3001', 10);
@@ -98,6 +99,7 @@ app.use('/api/call-offs', callOffRoutes);
 app.use('/api/shipment-lines', shipmentLineRoutes);
 app.use('/api/counterparties', counterpartyRoutes);
 app.use('/api/diagnostic', diagnosticRoutes);
+app.use('/api/webhooks', webhookRoutes);
 
 // Error handling middleware (must be last)
 app.use(errorHandler);
