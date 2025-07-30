@@ -47,7 +47,7 @@ export function CallOffList({ onCreateCallOff, onViewCallOff, onEditCallOff }: C
     error,
     refetch
   } = useQuery({
-    queryKey: ['callOffs'],
+    queryKey: ['call-offs'],
     queryFn: fetchCallOffs,
     refetchInterval: 30000, // Refetch every 30 seconds
   })
@@ -57,7 +57,7 @@ export function CallOffList({ onCreateCallOff, onViewCallOff, onEditCallOff }: C
     mutationFn: confirmCallOff,
     onSuccess: () => {
       toast.success('Call-off confirmed successfully!')
-      queryClient.invalidateQueries({ queryKey: ['callOffs'] })
+      queryClient.invalidateQueries({ queryKey: ['call-offs'] })
     },
     onError: (error: Error) => {
       toast.error(error.message || 'Failed to confirm call-off')
@@ -65,10 +65,10 @@ export function CallOffList({ onCreateCallOff, onViewCallOff, onEditCallOff }: C
   })
 
   const cancelMutation = useMutation({
-    mutationFn: ({ id, reason }: { id: string; reason?: string }) => cancelCallOff(id, reason),
+    mutationFn: ({ id }: { id: string; reason?: string }) => cancelCallOff(id),
     onSuccess: () => {
       toast.success('Call-off cancelled successfully!')
-      queryClient.invalidateQueries({ queryKey: ['callOffs'] })
+      queryClient.invalidateQueries({ queryKey: ['call-offs'] })
     },
     onError: (error: Error) => {
       toast.error(error.message || 'Failed to cancel call-off')
@@ -79,7 +79,7 @@ export function CallOffList({ onCreateCallOff, onViewCallOff, onEditCallOff }: C
     mutationFn: fulfillCallOff,
     onSuccess: () => {
       toast.success('Call-off fulfilled successfully!')
-      queryClient.invalidateQueries({ queryKey: ['callOffs'] })
+      queryClient.invalidateQueries({ queryKey: ['call-offs'] })
     },
     onError: (error: Error) => {
       toast.error(error.message || 'Failed to fulfill call-off')

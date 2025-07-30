@@ -3,7 +3,8 @@ import { createTheme, ThemeProvider as MuiThemeProvider } from '@mui/material/st
 import CssBaseline from '@mui/material/CssBaseline'
 import { ThemeProvider } from './contexts/ThemeContext'
 import { QueryProvider } from './providers/QueryProvider'
-import { MockAuthProvider } from './auth/MockAuthProvider'
+import { ClerkProvider } from './providers/ClerkProvider'
+import { ClerkAuthProvider } from './auth/ClerkAuthProvider'
 import { ProtectedRoute } from './auth/ProtectedRoute'
 import { MuiLayout } from './components/layout/MuiLayout'
 import { SimpleDashboard } from './pages/SimpleDashboard'
@@ -33,16 +34,14 @@ const theme = createTheme({
 })
 
 function App() {
-  // Using MockAuthProvider for development
-  const AuthProviderComponent = MockAuthProvider
-
   return (
-    <ThemeProvider defaultTheme="dark">
-      <MuiThemeProvider theme={theme}>
-        <CssBaseline />
-        <DevBanner />
-        <Router>
-          <AuthProviderComponent>
+    <ClerkProvider>
+      <ThemeProvider defaultTheme="dark">
+        <MuiThemeProvider theme={theme}>
+          <CssBaseline />
+          <DevBanner />
+          <Router>
+            <ClerkAuthProvider>
             <Routes>
               {/* Public routes */}
               <Route path="/login" element={<LoginForm />} />
@@ -97,10 +96,11 @@ function App() {
                 } />
               </Route>
             </Routes>
-          </AuthProviderComponent>
-        </Router>
-      </MuiThemeProvider>
-    </ThemeProvider>
+            </ClerkAuthProvider>
+          </Router>
+        </MuiThemeProvider>
+      </ThemeProvider>
+    </ClerkProvider>
   )
 }
 

@@ -274,7 +274,7 @@ export function MuiQuotas() {
         }}
         onSuccess={(callOff) => {
           // Navigate to call-offs page with the new call-off selected
-          navigate('/mui/call-offs', { state: { selectedCallOffId: callOff.call_off_id } })
+          navigate('/call-offs', { state: { selectedCallOffId: callOff.call_off_id } })
         }}
         initialQuota={selectedQuota}
       />
