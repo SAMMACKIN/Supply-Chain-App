@@ -163,9 +163,8 @@ export function ShipmentLineList({ callOff, readonly = false }: ShipmentLineList
 
   // Calculate capacity visualization
   const capacityInfo = useMemo<CapacityVisualization | null>(() => {
-    if (!filteredShipmentLines.length) return null
-
-    const allocatedCapacity = filteredShipmentLines.reduce((sum, line) => sum + line.bundle_qty, 0)
+    // Always calculate capacity info, even when no shipment lines exist
+    const allocatedCapacity = filteredShipmentLines?.reduce((sum, line) => sum + line.bundle_qty, 0) || 0
     const remainingCapacity = callOff.bundle_qty - allocatedCapacity
     const utilizationPercentage = (allocatedCapacity / callOff.bundle_qty) * 100
 
@@ -175,12 +174,12 @@ export function ShipmentLineList({ callOff, readonly = false }: ShipmentLineList
       remainingCapacity,
       utilizationPercentage,
       isOverAllocated: allocatedCapacity > callOff.bundle_qty,
-      allocationBreakdown: filteredShipmentLines.map(line => ({
+      allocationBreakdown: filteredShipmentLines?.map(line => ({
         shipmentLineId: line.shipment_line_id,
         bundleQty: line.bundle_qty,
         percentage: (line.bundle_qty / callOff.bundle_qty) * 100,
         status: line.status
-      }))
+      })) || []
     }
   }, [filteredShipmentLines, callOff.bundle_qty])
 
@@ -266,7 +265,7 @@ export function ShipmentLineList({ callOff, readonly = false }: ShipmentLineList
     )
   }
 
-  const canEdit = !readonly && callOff.status === 'NEW'
+  const canEdit = !readonly && (callOff.status === 'NEW' || callOff.status === 'CONFIRMED')
   const hasActiveFilters = Object.keys(filters).some(key => {
     const value = filters[key as keyof ShipmentLineFilters]
     return Array.isArray(value) ? value.length > 0 : value !== undefined

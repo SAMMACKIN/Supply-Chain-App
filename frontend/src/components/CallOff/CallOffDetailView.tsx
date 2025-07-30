@@ -345,7 +345,7 @@ export function CallOffDetailView({ callOff: initialCallOff, open, onClose, onEd
                   <ShippingIcon sx={{ fontSize: 20 }} />
                   Shipment Lines
                 </Typography>
-                <ShipmentLineList callOff={callOff} readonly={callOff.status !== 'NEW'} />
+                <ShipmentLineList callOff={callOff} readonly={callOff.status !== 'NEW' && callOff.status !== 'CONFIRMED'} />
               </CardContent>
             </Card>
           </Box>
