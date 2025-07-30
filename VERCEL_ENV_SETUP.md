@@ -4,17 +4,20 @@
 
 1. Go to your Vercel project dashboard
 2. Navigate to Settings → Environment Variables
-3. Add the following variable for Preview environment:
+3. Add the following variables for all environments (Production, Preview, Development):
 
 ```
 VITE_API_URL=https://supply-chain-app-development.up.railway.app/api
+VITE_CLERK_PUBLISHABLE_KEY=pk_test_bGVhZGluZy1kb2ctNTYuY2xlcmsuYWNjb3VudHMuZGV2JA
+VITE_DEV_MODE=true
 ```
 
-## Keep Existing Variables
+## Important: Clerk Authentication
 
-Make sure these existing variables remain configured:
-- `VITE_SUPABASE_URL` (for hybrid mode during migration)
-- `VITE_SUPABASE_ANON_KEY` (for hybrid mode during migration)
+The `VITE_CLERK_PUBLISHABLE_KEY` is **required** for the app to load. Without it, you'll see:
+```
+Uncaught Error: Missing Clerk Publishable Key. Add VITE_CLERK_PUBLISHABLE_KEY to your .env file.
+```
 
 ## After Adding Variables
 
