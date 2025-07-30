@@ -80,6 +80,31 @@ router.get('/', requireAuth, async (req, res) => {
   });
 });
 
+// GET /api/quotas/counterparties - List unique counterparties
+router.get('/filters/counterparties', requireAuth, async (_req, res) => {
+  const counterparties = await prisma.counterparty.findMany({
+    where: {
+      is_active: true,
+      quotas: {
+        some: {}, // Just check if any quotas exist
+      },
+    },
+    select: {
+      counterparty_id: true,
+      company_name: true,
+      company_code: true,
+    },
+    orderBy: {
+      company_name: 'asc',
+    },
+  });
+  
+  res.json({
+    success: true,
+    data: counterparties,
+  });
+});
+
 // GET /api/quotas/:id - Get single quota
 router.get('/:id', requireAuth, async (req, res): Promise<void> => {
   const { id } = req.params;
@@ -159,31 +184,6 @@ router.get('/:id/balance', requireAuth, async (req, res): Promise<void> => {
   res.json({
     success: true,
     data: balance,
-  });
-});
-
-// GET /api/quotas/counterparties - List unique counterparties
-router.get('/filters/counterparties', requireAuth, async (_req, res) => {
-  const counterparties = await prisma.counterparty.findMany({
-    where: {
-      is_active: true,
-      quotas: {
-        some: {}, // Just check if any quotas exist
-      },
-    },
-    select: {
-      counterparty_id: true,
-      company_name: true,
-      company_code: true,
-    },
-    orderBy: {
-      company_name: 'asc',
-    },
-  });
-  
-  res.json({
-    success: true,
-    data: counterparties,
   });
 });
 
