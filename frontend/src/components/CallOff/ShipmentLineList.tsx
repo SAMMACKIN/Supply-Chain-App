@@ -267,89 +267,290 @@ export function ShipmentLineList({ callOff, readonly = false }: ShipmentLineList
   }
 
   const canEdit = !readonly && callOff.status === 'NEW'
+  const hasActiveFilters = Object.keys(filters).some(key => {
+    const value = filters[key as keyof ShipmentLineFilters]
+    return Array.isArray(value) ? value.length > 0 : value !== undefined
+  })
 
   return (
     <Box>
+      {/* Header with actions */}
       <Stack direction="row" justifyContent="space-between" alignItems="center" sx={{ mb: 2 }}>
-        <Typography variant="h6">
-          Shipment Lines ({shipmentLines?.length || 0})
-        </Typography>
-        {canEdit && (
+        <Box>
+          <Typography variant="h6" sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+            Shipment Lines 
+            <Badge badgeContent={filteredShipmentLines.length} color="primary">
+              <Box />
+            </Badge>
+            {hasActiveFilters && (
+              <Chip 
+                size="small" 
+                label="Filtered" 
+                color="info" 
+                variant="outlined"
+                onDelete={clearFilters}
+              />
+            )}
+          </Typography>
+          {shipmentLines && shipmentLines.length !== filteredShipmentLines.length && (
+            <Typography variant="body2" color="text.secondary">
+              Showing {filteredShipmentLines.length} of {shipmentLines.length} shipment lines
+            </Typography>
+          )}
+        </Box>
+        
+        <Stack direction="row" spacing={1}>
+          {/* Filter Button */}
           <Button
-            variant="contained"
-            startIcon={<AddIcon />}
-            onClick={() => setCreateOpen(true)}
-            disabled={remainingBundles <= 0}
+            variant="outlined"
+            size="small"
+            startIcon={<FilterIcon />}
+            onClick={(e) => setFilterMenuAnchor(e.currentTarget)}
+            color={hasActiveFilters ? 'primary' : 'inherit'}
           >
-            Add Shipment Line
+            Filter
           </Button>
-        )}
+          
+          {/* Add Shipment Line Button */}
+          {canEdit && (
+            <Button
+              variant="contained"
+              startIcon={<AddIcon />}
+              onClick={() => setCreateOpen(true)}
+              disabled={!capacityInfo || capacityInfo.remainingCapacity <= 0}
+            >
+              Add Shipment Line
+            </Button>
+          )}
+        </Stack>
       </Stack>
 
-      {remainingBundles > 0 && (
-        <Alert severity="info" sx={{ mb: 2 }}>
-          {remainingBundles} bundle{remainingBundles !== 1 ? 's' : ''} remaining to be allocated
+      {/* Capacity Visualization */}
+      {capacityInfo && (
+        <Card variant="outlined" sx={{ mb: 3 }}>
+          <CardHeader
+            title={
+              <Typography variant="subtitle1" sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                <TimelineIcon color="primary" />
+                Allocation Progress
+              </Typography>
+            }
+            action={
+              <Button
+                size="small"
+                onClick={() => setShowCapacityDetails(!showCapacityDetails)}
+                endIcon={<ExpandMoreIcon sx={{ 
+                  transform: showCapacityDetails ? 'rotate(180deg)' : 'none',
+                  transition: 'transform 0.2s'
+                }} />}
+              >
+                Details
+              </Button>
+            }
+            sx={{ pb: 1 }}
+          />
+          <CardContent sx={{ pt: 0 }}>
+            <Box sx={{ mb: 2 }}>
+              <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 1 }}>
+                <Typography variant="body2" color="text.secondary">
+                  {formatQuantity(capacityInfo.allocatedCapacity)} of {formatQuantity(capacityInfo.totalCapacity)} allocated
+                </Typography>
+                <Typography variant="body2" fontWeight="medium">
+                  {formatPercentage(capacityInfo.utilizationPercentage)}
+                </Typography>
+              </Box>
+              <LinearProgress
+                variant="determinate"
+                value={Math.min(capacityInfo.utilizationPercentage, 100)}
+                sx={{
+                  height: 8,
+                  borderRadius: 4,
+                  '& .MuiLinearProgress-bar': {
+                    backgroundColor: capacityInfo.utilizationPercentage >= 100 ? '#f44336' : 
+                                   capacityInfo.utilizationPercentage >= 90 ? '#ff9800' : '#4caf50'
+                  }
+                }}
+              />
+              {capacityInfo.remainingCapacity > 0 ? (
+                <Typography variant="body2" color="success.main" sx={{ mt: 1 }}>
+                  {formatQuantity(capacityInfo.remainingCapacity)} remaining capacity
+                </Typography>
+              ) : (
+                <Typography variant="body2" color="error.main" sx={{ mt: 1 }}>
+                  {capacityInfo.isOverAllocated ? 'Over-allocated' : 'Fully allocated'}
+                </Typography>
+              )}
+            </Box>
+
+            <Collapse in={showCapacityDetails}>
+              <Divider sx={{ mb: 2 }} />
+              <Grid container spacing={2}>
+                {capacityInfo.allocationBreakdown.map((allocation, index) => (
+                  <Grid item xs={12} sm={6} md={4} key={allocation.shipmentLineId}>
+                    <Card variant="outlined" size="small">
+                      <CardContent sx={{ py: 1.5 }}>
+                        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                          <Typography variant="body2">
+                            Shipment {index + 1}
+                          </Typography>
+                          <Chip 
+                            size="small" 
+                            label={allocation.status} 
+                            color={statusColors[allocation.status]}
+                            icon={getStatusIcon(allocation.status)}
+                          />
+                        </Box>
+                        <Typography variant="body2" color="text.secondary">
+                          {formatQuantity(allocation.bundleQty)} ({formatPercentage(allocation.percentage)})
+                        </Typography>
+                      </CardContent>
+                    </Card>
+                  </Grid>
+                ))}
+              </Grid>
+              
+              {quotaBalance && (
+                <Alert severity="info" sx={{ mt: 2 }}>
+                  Quota Impact: This call-off uses {formatPercentage((capacityInfo.allocatedCapacity / quotaBalance.quota_qty_tonnes) * 100)} of quota capacity
+                </Alert>
+              )}
+            </Collapse>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Bulk Actions */}
+      {selectedLines.size > 0 && canEdit && (
+        <Alert 
+          severity="info" 
+          sx={{ mb: 2 }}
+          action={
+            <Button size="small" onClick={() => setSelectedLines(new Set())}>
+              Clear Selection
+            </Button>
+          }
+        >
+          {selectedLines.size} shipment line{selectedLines.size !== 1 ? 's' : ''} selected
         </Alert>
       )}
 
-      {shipmentLines && shipmentLines.length > 0 ? (
+      {/* Shipment Lines List */}
+      {filteredShipmentLines.length > 0 ? (
         <Stack spacing={2}>
-          {shipmentLines.map((line) => (
-            <Card key={line.shipment_line_id} variant="outlined">
+          {/* Select All Checkbox */}
+          {canEdit && filteredShipmentLines.length > 1 && (
+            <Card variant="outlined">
+              <CardContent sx={{ py: 2 }}>
+                <FormControlLabel
+                  control={
+                    <Checkbox
+                      checked={selectedLines.size === filteredShipmentLines.length && filteredShipmentLines.length > 0}
+                      indeterminate={selectedLines.size > 0 && selectedLines.size < filteredShipmentLines.length}
+                      onChange={(e) => handleSelectAll(e.target.checked)}
+                    />
+                  }
+                  label={`Select all ${filteredShipmentLines.length} shipment lines`}
+                />
+              </CardContent>
+            </Card>
+          )}
+
+          {filteredShipmentLines.map((line) => (
+            <Card 
+              key={line.shipment_line_id} 
+              variant="outlined"
+              sx={{
+                backgroundColor: selectedLines.has(line.shipment_line_id) ? 'action.selected' : 'inherit'
+              }}
+            >
               <CardContent>
                 <Stack direction="row" justifyContent="space-between" alignItems="flex-start">
+                  {/* Selection Checkbox */}
+                  {canEdit && (
+                    <Box sx={{ pr: 2, pt: 0.5 }}>
+                      <Checkbox
+                        size="small"
+                        checked={selectedLines.has(line.shipment_line_id)}
+                        onChange={(e) => handleBulkSelection(line.shipment_line_id, e.target.checked)}
+                      />
+                    </Box>
+                  )}
+
                   <Box sx={{ flex: 1 }}>
                     <Stack direction="row" spacing={2} alignItems="center" sx={{ mb: 1 }}>
                       <Typography variant="h6">
-                        {line.bundle_qty} Bundle{line.bundle_qty !== 1 ? 's' : ''} - {line.metal_code}
+                        {formatQuantity(line.bundle_qty)} {line.metal_code}
                       </Typography>
                       <Chip 
                         label={line.status} 
                         size="small" 
                         color={statusColors[line.status]}
+                        icon={getStatusIcon(line.status)}
                       />
+                      <Typography variant="body2" color="text.secondary">
+                        {formatPercentage((line.bundle_qty / callOff.bundle_qty) * 100)} of call-off
+                      </Typography>
                     </Stack>
 
-                    <Stack spacing={0.5}>
+                    <Grid container spacing={2}>
                       {line.delivery_location && (
-                        <Typography variant="body2" color="text.secondary">
-                          Delivery Location: {line.delivery_location}
-                        </Typography>
+                        <Grid item xs={12} sm={6}>
+                          <Typography variant="body2" color="text.secondary">
+                            📍 {line.delivery_location}
+                          </Typography>
+                        </Grid>
                       )}
                       {line.requested_delivery_date && (
-                        <Typography variant="body2" color="text.secondary">
-                          Requested Delivery: {new Date(line.requested_delivery_date).toLocaleDateString()}
-                        </Typography>
+                        <Grid item xs={12} sm={6}>
+                          <Typography variant="body2" color="text.secondary">
+                            📅 Requested: {new Date(line.requested_delivery_date).toLocaleDateString()}
+                          </Typography>
+                        </Grid>
                       )}
                       {line.expected_ship_date && (
-                        <Typography variant="body2" color="text.secondary">
-                          Expected Ship Date: {new Date(line.expected_ship_date).toLocaleDateString()}
-                        </Typography>
+                        <Grid item xs={12} sm={6}>
+                          <Typography variant="body2" color="text.secondary">
+                            🚢 Ship: {new Date(line.expected_ship_date).toLocaleDateString()}
+                          </Typography>
+                        </Grid>
                       )}
-                      {line.notes && (
-                        <Typography variant="body2" color="text.secondary" sx={{ fontStyle: 'italic' }}>
-                          Notes: {line.notes}
-                        </Typography>
+                      {line.destination_party_id && (
+                        <Grid item xs={12} sm={6}>
+                          <Typography variant="body2" color="text.secondary">
+                            🏢 {line.destination_party_id}
+                          </Typography>
+                        </Grid>
                       )}
-                    </Stack>
+                    </Grid>
+
+                    {line.notes && (
+                      <Typography variant="body2" color="text.secondary" sx={{ mt: 1, fontStyle: 'italic' }}>
+                        💬 {line.notes}
+                      </Typography>
+                    )}
                   </Box>
 
-                  {canEdit && line.status === 'PLANNED' && (
+                  {canEdit && (
                     <Stack direction="row" spacing={1}>
-                      <IconButton 
-                        size="small" 
-                        onClick={() => setEditLine(line)}
-                        color="primary"
-                      >
-                        <EditIcon />
-                      </IconButton>
-                      <IconButton 
-                        size="small" 
-                        onClick={() => handleDeleteClick(line)}
-                        color="error"
-                      >
-                        <DeleteIcon />
-                      </IconButton>
+                      <Tooltip title="Edit shipment line">
+                        <IconButton 
+                          size="small" 
+                          onClick={() => setEditLine(line)}
+                          color="primary"
+                        >
+                          <EditIcon />
+                        </IconButton>
+                      </Tooltip>
+                      <Tooltip title="Delete shipment line">
+                        <IconButton 
+                          size="small" 
+                          onClick={() => handleDeleteClick(line)}
+                          color="error"
+                          disabled={line.status === 'DELIVERED' || line.status === 'SHIPPED'}
+                        >
+                          <DeleteIcon />
+                        </IconButton>
+                      </Tooltip>
                     </Stack>
                   )}
                 </Stack>
@@ -359,9 +560,94 @@ export function ShipmentLineList({ callOff, readonly = false }: ShipmentLineList
         </Stack>
       ) : (
         <Alert severity="info">
-          No shipment lines created yet. Click "Add Shipment Line" to split this call-off into deliveries.
+          {hasActiveFilters 
+            ? 'No shipment lines match the current filters.' 
+            : 'No shipment lines created yet. Click "Add Shipment Line" to split this call-off into deliveries.'
+          }
         </Alert>
       )}
+
+      {/* Filter Menu */}
+      <Menu
+        anchorEl={filterMenuAnchor}
+        open={Boolean(filterMenuAnchor)}
+        onClose={() => setFilterMenuAnchor(null)}
+        PaperProps={{ sx: { minWidth: 300, p: 2 } }}
+      >
+        <Typography variant="subtitle2" sx={{ mb: 2 }}>Filter Shipment Lines</Typography>
+        
+        <Stack spacing={2}>
+          {/* Status Filter */}
+          <FormControl fullWidth size="small">
+            <InputLabel>Status</InputLabel>
+            <Select
+              multiple
+              value={filters.status || []}
+              onChange={(e) => setFilters({...filters, status: e.target.value as ShipmentLineStatus[]})}
+              label="Status"
+              renderValue={(selected) => (
+                <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
+                  {selected.map((value) => (
+                    <Chip key={value} label={value} size="small" />
+                  ))}
+                </Box>
+              )}
+            >
+              {Object.keys(statusColors).map((status) => (
+                <MenuItem key={status} value={status}>
+                  <ListItemIcon>
+                    {getStatusIcon(status as ShipmentLineStatus)}
+                  </ListItemIcon>
+                  <ListItemText primary={status} />
+                </MenuItem>
+              ))}
+            </Select>
+          </FormControl>
+
+          {/* Bundle Quantity Range */}
+          <Box>
+            <Typography variant="body2" sx={{ mb: 1 }}>Bundle Quantity Range</Typography>
+            <Stack direction="row" spacing={1}>
+              <TextField
+                size="small"
+                label="Min"
+                type="number"
+                value={filters.bundleQtyRange?.min || ''}
+                onChange={(e) => setFilters({
+                  ...filters, 
+                  bundleQtyRange: {
+                    ...filters.bundleQtyRange,
+                    min: e.target.value ? Number(e.target.value) : undefined,
+                    max: filters.bundleQtyRange?.max
+                  }
+                })}
+              />
+              <TextField
+                size="small"
+                label="Max"
+                type="number"
+                value={filters.bundleQtyRange?.max || ''}
+                onChange={(e) => setFilters({
+                  ...filters, 
+                  bundleQtyRange: {
+                    ...filters.bundleQtyRange,
+                    min: filters.bundleQtyRange?.min,
+                    max: e.target.value ? Number(e.target.value) : undefined
+                  }
+                })}
+              />
+            </Stack>
+          </Box>
+
+          <Divider />
+          <Stack direction="row" spacing={1}>
+            <Button size="small" onClick={clearFilters}>Clear All</Button>
+            <Button size="small" onClick={() => setFilterMenuAnchor(null)} variant="contained">
+              Apply
+            </Button>
+          </Stack>
+        </Stack>
+      </Menu>
 
       {/* Create Dialog */}
       <CreateShipmentLineDialog
@@ -381,26 +667,16 @@ export function ShipmentLineList({ callOff, readonly = false }: ShipmentLineList
       )}
 
       {/* Delete Confirmation Dialog */}
-      <Dialog open={deleteConfirmOpen} onClose={() => setDeleteConfirmOpen(false)}>
-        <DialogTitle>Delete Shipment Line?</DialogTitle>
-        <DialogContent>
-          <Typography>
-            Are you sure you want to delete this shipment line of {lineToDelete?.bundle_qty} bundle(s)?
-            This action cannot be undone.
-          </Typography>
-        </DialogContent>
-        <DialogActions>
-          <Button onClick={() => setDeleteConfirmOpen(false)}>Cancel</Button>
-          <Button 
-            onClick={handleDeleteConfirm} 
-            color="error" 
-            variant="contained"
-            disabled={deleteMutation.isPending}
-          >
-            {deleteMutation.isPending ? 'Deleting...' : 'Delete'}
-          </Button>
-        </DialogActions>
-      </Dialog>
+      <ConfirmationDialog
+        open={deleteConfirmation.open}
+        onClose={() => setDeleteConfirmation({ ...deleteConfirmation, open: false })}
+        onConfirm={handleDeleteConfirm}
+        title={deleteConfirmation.title}
+        message={deleteConfirmation.message}
+        details={deleteConfirmation.details}
+        severity={deleteConfirmation.severity}
+        loading={deleteMutation.isPending}
+      />
     </Box>
   )
 }
