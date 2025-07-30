@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react'
 import { useUser, useAuth as useClerkAuth } from '@clerk/clerk-react'
 import { AuthContext } from './AuthContext'
+import { MockAuthProvider } from './MockAuthProvider'
 import type { 
   AuthContextType, 
   AuthUser, 
@@ -31,6 +32,16 @@ const mapClerkRoleToUserRole = (clerkRole?: string): UserRole => {
 }
 
 export function ClerkAuthProvider({ children }: ClerkAuthProviderProps) {
+  // Check if Clerk is available (has publishable key)
+  const PUBLISHABLE_KEY = import.meta.env.VITE_CLERK_PUBLISHABLE_KEY
+  const DEV_MODE = import.meta.env.VITE_DEV_MODE === 'true'
+  
+  // If no Clerk key in dev mode, fall back to MockAuthProvider
+  if (!PUBLISHABLE_KEY && DEV_MODE) {
+    console.warn('🔄 Falling back to MockAuthProvider in development mode')
+    return <MockAuthProvider>{children}</MockAuthProvider>
+  }
+
   const { isLoaded, isSignedIn, user: clerkUser } = useUser()
   const { signOut } = useClerkAuth()
   const [user, setUser] = useState<AuthUser | null>(null)
