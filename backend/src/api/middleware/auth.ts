@@ -24,10 +24,33 @@ declare global {
   }
 }
 
-// Clerk authentication middleware
+// Authentication middleware (supports both Clerk and Mock modes)
 export const requireAuth = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
   try {
-    // Get the session token from Authorization header
+    // Check if Clerk is configured
+    if (!env.CLERK_SECRET_KEY) {
+      // Mock auth mode - skip authentication and use dev user
+      console.log('🔄 Using mock authentication (Clerk not configured)');
+      
+      const mockUserId = '00000000-0000-0000-0000-000000000000';
+      const mockSessionId = 'sess_mock_dev_session';
+      
+      // Add mock auth info to request
+      req.auth = {
+        userId: mockUserId,
+        sessionId: mockSessionId,
+        claims: {
+          id: mockSessionId,
+          userId: mockUserId,
+          status: 'active'
+        }
+      };
+
+      next();
+      return;
+    }
+
+    // Clerk auth mode - require proper authentication
     const authHeader = req.headers.authorization;
     if (!authHeader || !authHeader.startsWith('Bearer ')) {
       res.status(401).json({
@@ -38,15 +61,6 @@ export const requireAuth = async (req: Request, res: Response, next: NextFunctio
     }
 
     const sessionToken = authHeader.substring(7); // Remove 'Bearer ' prefix
-
-    // Check if Clerk is configured (for mock auth phase)
-    if (!env.CLERK_SECRET_KEY) {
-      res.status(401).json({
-        success: false,
-        error: 'Authentication service not configured'
-      });
-      return;
-    }
 
     // Verify the session token with Clerk
     const session = await clerkClient.sessions.verifySession(sessionToken, env.CLERK_SECRET_KEY);
@@ -79,7 +93,7 @@ export const requireAuth = async (req: Request, res: Response, next: NextFunctio
   }
 };
 
-// Custom middleware to check user roles (after Clerk auth)
+// Custom middleware to check user roles (supports both Clerk and Mock modes)
 export const requireRole = (allowedRoles: string[]) => {
   return async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     if (!req.auth) {
@@ -91,7 +105,27 @@ export const requireRole = (allowedRoles: string[]) => {
     }
 
     try {
-      // Fetch user profile from database
+      // Check if we're in mock auth mode
+      if (!env.CLERK_SECRET_KEY && req.auth.userId === '00000000-0000-0000-0000-000000000000') {
+        // Mock auth mode - use mock user profile
+        console.log('🔄 Using mock role authorization (Clerk not configured)');
+        
+        const mockUserProfile = {
+          user_id: '00000000-0000-0000-0000-000000000000',
+          role: 'OPS', // Default role for dev user
+          business_unit: 'DEV',
+          warehouse_ids: ['WH001'],
+          created_at: new Date('2025-01-01T00:00:00Z'),
+          updated_at: new Date('2025-01-01T00:00:00Z'),
+        };
+
+        // Add mock user profile to request
+        req.userProfile = mockUserProfile;
+        next();
+        return;
+      }
+
+      // Clerk auth mode - fetch real user profile from database
       const userProfile = await ClerkSyncService.getOrCreateUserProfile(req.auth.userId);
       
       if (!userProfile) {
