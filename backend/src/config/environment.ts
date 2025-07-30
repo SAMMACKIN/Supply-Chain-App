@@ -9,9 +9,9 @@ const envSchema = z.object({
   // Database
   DATABASE_URL: z.string().url(),
   
-  // Authentication
-  CLERK_SECRET_KEY: z.string().min(1, 'CLERK_SECRET_KEY is required'),
-  CLERK_PUBLISHABLE_KEY: z.string().min(1, 'CLERK_PUBLISHABLE_KEY is required'),
+  // Authentication (optional during mock auth phase)
+  CLERK_SECRET_KEY: z.string().optional(),
+  CLERK_PUBLISHABLE_KEY: z.string().optional(),
   
   // Frontend
   FRONTEND_URL: z.string().url().default('http://localhost:3000'),
@@ -20,8 +20,16 @@ const envSchema = z.object({
   API_SECRET_KEY: z.string().optional(),
   
   // Rate limiting
-  RATE_LIMIT_WINDOW_MS: z.string().transform(Number).default('900000'), // 15 minutes
-  RATE_LIMIT_MAX_REQUESTS: z.string().transform(Number).default('100'),
+  RATE_LIMIT_WINDOW_MS: z.string().transform((val) => {
+    const num = Number(val);
+    if (isNaN(num)) throw new Error('Must be a valid number');
+    return num;
+  }).default('900000'), // 15 minutes
+  RATE_LIMIT_MAX_REQUESTS: z.string().transform((val) => {
+    const num = Number(val);
+    if (isNaN(num)) throw new Error('Must be a valid number');
+    return num;
+  }).default('100'),
 });
 
 // Parse and validate environment variables

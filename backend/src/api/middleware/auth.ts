@@ -39,6 +39,15 @@ export const requireAuth = async (req: Request, res: Response, next: NextFunctio
 
     const sessionToken = authHeader.substring(7); // Remove 'Bearer ' prefix
 
+    // Check if Clerk is configured (for mock auth phase)
+    if (!env.CLERK_SECRET_KEY) {
+      res.status(401).json({
+        success: false,
+        error: 'Authentication service not configured'
+      });
+      return;
+    }
+
     // Verify the session token with Clerk
     const session = await clerkClient.sessions.verifySession(sessionToken, env.CLERK_SECRET_KEY);
 

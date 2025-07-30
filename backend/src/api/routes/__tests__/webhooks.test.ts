@@ -166,6 +166,89 @@ describe('Webhooks API Routes', () => {
           error: 'Missing webhook signature',
         });
       });
+
+      it('should handle malformed signature headers', async () => {
+        const malformedSignatures = [
+          'not-a-valid-signature',
+          'Bearer token',
+          '   ', // whitespace only
+          '\n\n', // newlines
+          'null',
+          'undefined',
+        ];
+
+        for (const signature of malformedSignatures) {
+          const response = await createWebhookRequest(
+            '/api/webhooks/clerk',
+            mockUserCreatedWebhook,
+            signature
+          );
+
+          expect(response.status).toBe(401);
+          expect(response.body).toEqual({
+            success: false,
+            error: 'Invalid webhook signature',
+          });
+        }
+      });
+
+      it('should handle extremely long signature headers', async () => {
+        const longSignature = 'a'.repeat(10000);
+        const response = await createWebhookRequest(
+          '/api/webhooks/clerk',
+          mockUserCreatedWebhook,
+          longSignature
+        );
+
+        expect(response.status).toBe(401);
+        expect(response.body).toEqual({
+          success: false,
+          error: 'Invalid webhook signature',
+        });
+      });
+
+      it('should handle signatures with special characters', async () => {
+        const specialCharSignatures = [
+          'sig_with_emoji_😀',
+          'sig_with_unicode_\u0000',
+          'sig_with_control_chars_\x00\x01\x02',
+          'sig_with_<script>alert(1)</script>',
+        ];
+
+        for (const signature of specialCharSignatures) {
+          const response = await createWebhookRequest(
+            '/api/webhooks/clerk',
+            mockUserCreatedWebhook,
+            signature
+          );
+
+          expect(response.status).toBe(401);
+        }
+      });
+
+      it('should handle signature verification when webhook body is tampered', async () => {
+        // This test verifies that webhook signature validation would reject tampered data
+        // Since we're mocking the signature validation, this effectively tests that
+        // invalid signatures are rejected at the middleware level
+        
+        const tamperedWebhook = {
+          type: 'user.created',
+          data: { id: 'tampered_id' },
+        };
+
+        // Any non-"valid-signature" value should be rejected
+        const response = await createWebhookRequest(
+          '/api/webhooks/clerk',
+          tamperedWebhook,
+          'invalid-signature-for-tampered-data'
+        );
+
+        expect(response.status).toBe(401);
+        expect(response.body).toEqual({
+          success: false,
+          error: 'Invalid webhook signature',
+        });
+      });
     });
 
     describe('Webhook Body Parsing', () => {
@@ -217,6 +300,116 @@ describe('Webhooks API Routes', () => {
 
         expect(response.status).toBe(200);
         expect(ClerkSyncService.handleUserWebhook).toHaveBeenCalledWith(webhookWithNulls);
+      });
+
+      it('should handle extremely large webhook bodies', async () => {
+        const largeWebhook = {
+          type: 'user.created',
+          data: {
+            id: 'user_large',
+            large_field: 'x'.repeat(1000000), // 1MB of data
+            email_addresses: [{ email_address: 'test@example.com' }],
+          },
+        };
+
+        const response = await createWebhookRequest(
+          '/api/webhooks/clerk',
+          largeWebhook,
+          'valid-signature'
+        );
+
+        expect(response.status).toBe(200);
+        expect(ClerkSyncService.handleUserWebhook).toHaveBeenCalled();
+      });
+
+      it('should handle deeply nested webhook data', async () => {
+        const deeplyNested = {
+          type: 'user.created',
+          data: {
+            id: 'user_nested',
+            metadata: {
+              level1: {
+                level2: {
+                  level3: {
+                    level4: {
+                      level5: 'deep value',
+                    },
+                  },
+                },
+              },
+            },
+          },
+        };
+
+        const response = await createWebhookRequest(
+          '/api/webhooks/clerk',
+          deeplyNested,
+          'valid-signature'
+        );
+
+        expect(response.status).toBe(200);
+        expect(ClerkSyncService.handleUserWebhook).toHaveBeenCalledWith(deeplyNested);
+      });
+
+      it('should handle arrays in webhook data', async () => {
+        const webhookWithArrays = {
+          type: 'user.created',
+          data: {
+            id: 'user_arrays',
+            email_addresses: Array(100).fill({ email_address: 'test@example.com' }),
+            phone_numbers: [],
+            roles: ['admin', 'user', 'moderator'],
+          },
+        };
+
+        const response = await createWebhookRequest(
+          '/api/webhooks/clerk',
+          webhookWithArrays,
+          'valid-signature'
+        );
+
+        expect(response.status).toBe(200);
+        expect(ClerkSyncService.handleUserWebhook).toHaveBeenCalledWith(webhookWithArrays);
+      });
+
+      it('should handle webhook with circular reference prevention', async () => {
+        // Create a webhook that would have circular references if not handled properly
+        const webhookData = {
+          type: 'user.created',
+          data: {
+            id: 'user_circular',
+            self: null as any,
+          },
+        };
+        // This would create a circular reference: webhookData.data.self = webhookData.data;
+        
+        const response = await createWebhookRequest(
+          '/api/webhooks/clerk',
+          webhookData,
+          'valid-signature'
+        );
+
+        expect(response.status).toBe(200);
+      });
+
+      it('should handle various JSON edge cases', async () => {
+        const edgeCases = [
+          { type: 'user.created', data: { id: 'user_unicode', name: '👨‍👩‍👧‍👦🎉' } },
+          { type: 'user.created', data: { id: 'user_escape', name: 'Line1\nLine2\tTab' } },
+          { type: 'user.created', data: { id: 'user_quotes', name: 'He said "Hello"' } },
+          { type: 'user.created', data: { id: 'user_backslash', path: 'C:\\Users\\Test' } },
+        ];
+
+        for (const webhook of edgeCases) {
+          const response = await createWebhookRequest(
+            '/api/webhooks/clerk',
+            webhook,
+            'valid-signature'
+          );
+
+          expect(response.status).toBe(200);
+          expect(ClerkSyncService.handleUserWebhook).toHaveBeenCalledWith(webhook);
+        }
       });
     });
 

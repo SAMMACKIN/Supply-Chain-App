@@ -58,6 +58,6 @@ export const errorHandler = (
   // Generic errors
   res.status(500).json({
     success: false,
-    error: err.message || 'Internal server error',
+    error: err?.message || 'Internal server error',
   });
 };

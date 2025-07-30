@@ -135,8 +135,11 @@ router.post('/clerk/manual-sync', json(), async (req, res) => {
       });
     }
     
+    // Handle null action explicitly - default to 'sync'
+    const actionToUse = action === null ? 'sync' : action;
+    
     let result: any;
-    switch (action) {
+    switch (actionToUse) {
       case 'sync':
         result = await ClerkSyncService.syncUser(userId);
         break;
@@ -153,7 +156,7 @@ router.post('/clerk/manual-sync', json(), async (req, res) => {
     return res.json({
       success: true,
       data: result,
-      message: `Manual ${action} completed for user ${userId}`
+      message: `Manual ${actionToUse} completed for user ${userId}`
     });
     
   } catch (error) {

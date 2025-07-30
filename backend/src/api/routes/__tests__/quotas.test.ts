@@ -474,6 +474,200 @@ describe('Quotas API Routes', () => {
     });
   });
 
+  describe('GET /api/quotas/:id/balance', () => {
+    it('should return balance details for a quota', async () => {
+      const mockQuotaWithCallOffs = {
+        ...mockQuota,
+        tolerance_pct: 10,
+        counterparty: mockCounterparty,
+        call_offs: [
+          {
+            call_off_id: '423e4567-e89b-12d3-a456-426614174000',
+            bundle_qty: 200,
+            status: 'CONFIRMED',
+          },
+          {
+            call_off_id: '523e4567-e89b-12d3-a456-426614174000',
+            bundle_qty: 150,
+            status: 'ACTIVE',
+          },
+        ],
+      };
+
+      (prisma.quota.findUnique as jest.Mock).mockResolvedValue(mockQuotaWithCallOffs);
+
+      const response = await request(app)
+        .get(`/api/quotas/${mockQuota.quota_id}/balance`)
+        .expect(200);
+
+      expect(response.body).toEqual({
+        success: true,
+        data: {
+          quota_id: mockQuota.quota_id,
+          quota_qty_tonnes: 1000,
+          consumed_bundles: 350,
+          pending_bundles: 0,
+          remaining_qty_tonnes: 650,
+          tolerance_pct: 10,
+          utilization_pct: 35,
+          tolerance_status: 'WITHIN_LIMITS',
+          call_off_count: 2,
+        },
+      });
+
+      expect(prisma.quota.findUnique).toHaveBeenCalledWith({
+        where: { quota_id: mockQuota.quota_id },
+        include: {
+          counterparty: true,
+          call_offs: {
+            where: {
+              status: { not: 'CANCELLED' },
+            },
+          },
+        },
+      });
+    });
+
+    it('should handle quota with no tolerance', async () => {
+      const mockQuotaNoTolerance = {
+        ...mockQuota,
+        tolerance_pct: null,
+        counterparty: mockCounterparty,
+        call_offs: [],
+      };
+
+      (prisma.quota.findUnique as jest.Mock).mockResolvedValue(mockQuotaNoTolerance);
+
+      const response = await request(app)
+        .get(`/api/quotas/${mockQuota.quota_id}/balance`)
+        .expect(200);
+
+      expect(response.body.data).toMatchObject({
+        tolerance_pct: 0,
+        consumed_bundles: 0,
+        tolerance_status: 'WITHIN_LIMITS',
+      });
+    });
+
+    it('should detect OVER_QUOTA status when consumed exceeds quota', async () => {
+      const mockQuotaOverused = {
+        ...mockQuota,
+        qty_t: 500,
+        tolerance_pct: 10, // 10% = 50 tonnes
+        counterparty: mockCounterparty,
+        call_offs: [
+          { bundle_qty: 520, status: 'ACTIVE' }, // 20 over quota, within tolerance
+        ],
+      };
+
+      (prisma.quota.findUnique as jest.Mock).mockResolvedValue(mockQuotaOverused);
+
+      const response = await request(app)
+        .get(`/api/quotas/${mockQuota.quota_id}/balance`)
+        .expect(200);
+
+      expect(response.body.data).toMatchObject({
+        quota_qty_tonnes: 500,
+        consumed_bundles: 520,
+        remaining_qty_tonnes: -20,
+        tolerance_status: 'OVER_QUOTA',
+      });
+    });
+
+    it('should detect OVER_TOLERANCE status when consumed exceeds quota + tolerance', async () => {
+      const mockQuotaOverTolerance = {
+        ...mockQuota,
+        qty_t: 500,
+        tolerance_pct: 10, // 10% = 50 tonnes
+        counterparty: mockCounterparty,
+        call_offs: [
+          { bundle_qty: 560, status: 'ACTIVE' }, // 60 over quota, exceeds tolerance
+        ],
+      };
+
+      (prisma.quota.findUnique as jest.Mock).mockResolvedValue(mockQuotaOverTolerance);
+
+      const response = await request(app)
+        .get(`/api/quotas/${mockQuota.quota_id}/balance`)
+        .expect(200);
+
+      expect(response.body.data).toMatchObject({
+        quota_qty_tonnes: 500,
+        consumed_bundles: 560,
+        remaining_qty_tonnes: -60,
+        tolerance_status: 'OVER_TOLERANCE',
+      });
+    });
+
+    it('should return 404 for non-existent quota', async () => {
+      (prisma.quota.findUnique as jest.Mock).mockResolvedValue(null);
+
+      const response = await request(app)
+        .get(`/api/quotas/${mockQuota.quota_id}/balance`)
+        .expect(404);
+
+      expect(response.body).toEqual({
+        success: false,
+        error: 'Quota not found',
+      });
+    });
+
+    it('should handle database errors gracefully', async () => {
+      (prisma.quota.findUnique as jest.Mock).mockRejectedValue(new Error('Database connection failed'));
+
+      const response = await request(app)
+        .get(`/api/quotas/${mockQuota.quota_id}/balance`)
+        .expect(500);
+
+      expect(response.body).toMatchObject({
+        success: false,
+        error: 'Internal server error',
+      });
+    });
+
+    it('should exclude cancelled call-offs from balance calculations', async () => {
+      // The API filters out cancelled call-offs before returning them
+      const mockQuotaWithNonCancelledCallOffs = {
+        ...mockQuota,
+        counterparty: mockCounterparty,
+        call_offs: [
+          { bundle_qty: 200, status: 'CONFIRMED' },
+          { bundle_qty: 150, status: 'ACTIVE' },
+          // Cancelled call-offs are not included in the result
+        ],
+      };
+
+      (prisma.quota.findUnique as jest.Mock).mockResolvedValue(mockQuotaWithNonCancelledCallOffs);
+
+      const response = await request(app)
+        .get(`/api/quotas/${mockQuota.quota_id}/balance`)
+        .expect(200);
+
+      // Only non-cancelled call-offs should be counted
+      expect(response.body.data.consumed_bundles).toBe(350);
+      expect(response.body.data.call_off_count).toBe(2); // Only non-cancelled call-offs
+    });
+
+    it('should handle high precision utilization percentages', async () => {
+      const mockQuotaPrecision = {
+        ...mockQuota,
+        qty_t: 333,
+        counterparty: mockCounterparty,
+        call_offs: [
+          { bundle_qty: 111, status: 'ACTIVE' }, // 33.333...%
+        ],
+      };
+
+      (prisma.quota.findUnique as jest.Mock).mockResolvedValue(mockQuotaPrecision);
+
+      const response = await request(app)
+        .get(`/api/quotas/${mockQuota.quota_id}/balance`)
+        .expect(200);
+
+      expect(response.body.data.utilization_pct).toBe(33.33); // Rounded to 2 decimal places
+    });
+  });
+
   describe('Edge Cases', () => {
     it('should handle quotas with very large quantities', async () => {
       const largeQuota = {
