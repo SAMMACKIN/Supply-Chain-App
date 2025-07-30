@@ -364,8 +364,16 @@ export function CreateCallOffWizard({ open, onClose, onSuccess, initialCounterpa
   }
 
   return (
-    <Dialog open={open} onClose={handleClose} maxWidth="md" fullWidth>
-      <DialogTitle>
+    <Dialog 
+      open={open} 
+      onClose={handleClose} 
+      maxWidth="md" 
+      fullWidth
+      disableRestoreFocus
+      keepMounted={false}
+      aria-labelledby="create-call-off-dialog-title"
+    >
+      <DialogTitle id="create-call-off-dialog-title">
         Create New Call-Off
       </DialogTitle>
       

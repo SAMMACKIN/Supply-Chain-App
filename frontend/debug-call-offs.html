@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Debug Call-Offs Issue</title>
+</head>
+<body>
+    <h1>Debug Script for Call-Offs Issue</h1>
+    <p>Open browser console and run the following commands on your deployed Vercel app:</p>
+    
+    <pre>
+// 1. Check current URL and routing state
+console.log('Current URL:', window.location.href);
+console.log('Pathname:', window.location.pathname);
+
+// 2. Check if API URL is configured
+console.log('VITE_API_URL:', import.meta.env.VITE_API_URL);
+
+// 3. Test API connectivity
+fetch(import.meta.env.VITE_API_URL + '/counterparties')
+  .then(r => r.json())
+  .then(data => console.log('API Test:', data))
+  .catch(err => console.error('API Error:', err));
+
+// 4. Check React Router state
+console.log('React Router state:', window.history.state);
+
+// 5. Look for any base URL issues
+console.log('Base URI:', document.baseURI);
+    </pre>
+    
+    <h2>Quick Fixes to Try:</h2>
+    <ol>
+        <li>Clear browser cache and cookies</li>
+        <li>Check if the app is deployed to a subdirectory</li>
+        <li>Verify Vercel deployment settings</li>
+        <li>Test in incognito mode</li>
+    </ol>
+</body>
+</html>

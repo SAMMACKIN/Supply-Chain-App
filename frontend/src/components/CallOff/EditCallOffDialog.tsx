@@ -82,8 +82,16 @@ export function EditCallOffDialog({ callOff, open, onClose }: EditCallOffDialogP
   }
 
   return (
-    <Dialog open={open} onClose={handleClose} maxWidth="sm" fullWidth>
-      <DialogTitle sx={{ pb: 1 }}>
+    <Dialog 
+      open={open} 
+      onClose={handleClose} 
+      maxWidth="sm" 
+      fullWidth
+      disableRestoreFocus
+      keepMounted={false}
+      aria-labelledby="edit-call-off-dialog-title"
+    >
+      <DialogTitle id="edit-call-off-dialog-title" sx={{ pb: 1 }}>
         <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
           Edit Call-Off
           <IconButton onClick={handleClose} size="small">

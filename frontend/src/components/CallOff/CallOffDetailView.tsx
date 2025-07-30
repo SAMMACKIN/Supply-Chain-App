@@ -121,11 +121,14 @@ export function CallOffDetailView({ callOff, open, onClose, onEdit }: CallOffDet
       onClose={onClose}
       maxWidth="md"
       fullWidth
+      disableRestoreFocus
+      keepMounted={false}
+      aria-labelledby="call-off-detail-dialog-title"
       PaperProps={{
         sx: { minHeight: '70vh' }
       }}
     >
-      <DialogTitle sx={{ pb: 1 }}>
+      <DialogTitle id="call-off-detail-dialog-title" sx={{ pb: 1 }}>
         <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
           <Box>
             <Typography variant="h5" sx={{ fontWeight: 600 }}>
