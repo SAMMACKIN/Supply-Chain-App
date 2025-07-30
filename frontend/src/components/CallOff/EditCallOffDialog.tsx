@@ -59,6 +59,7 @@ export function EditCallOffDialog({ callOff, open, onClose }: EditCallOffDialogP
     onSuccess: () => {
       toast.success('Call-off updated successfully!')
       queryClient.invalidateQueries({ queryKey: ['call-offs'] })
+      queryClient.invalidateQueries({ queryKey: ['call-off', callOff.call_off_id] })
       onClose()
     },
     onError: (error: Error) => {

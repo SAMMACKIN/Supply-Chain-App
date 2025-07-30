@@ -37,13 +37,29 @@ interface CallOffDetailViewProps {
   onEdit?: (callOff: CallOff) => void
 }
 
-export function CallOffDetailView({ callOff, open, onClose, onEdit }: CallOffDetailViewProps) {
+export function CallOffDetailView({ callOff: initialCallOff, open, onClose, onEdit }: CallOffDetailViewProps) {
 
   // Add error boundaries and null checks
-  if (!callOff) {
+  if (!initialCallOff) {
     console.error('CallOffDetailView: callOff prop is null/undefined')
     return null
   }
+
+  // Fetch the latest call-off data to ensure UI updates when status changes
+  const { data: callOff = initialCallOff, isLoading: callOffLoading } = useQuery({
+    queryKey: ['call-off', initialCallOff.call_off_id],
+    queryFn: async () => {
+      try {
+        const response = await api.callOffs.get(initialCallOff.call_off_id)
+        return response.data
+      } catch (err) {
+        console.error('Failed to fetch call-off:', err)
+        return initialCallOff // Fallback to initial data
+      }
+    },
+    enabled: open && !!initialCallOff.call_off_id,
+    refetchInterval: 5000, // Refetch every 5 seconds while dialog is open
+  })
 
   // Query quota balance for context
   const { data: quotaBalance, isLoading: balanceLoading, error: balanceError } = useQuery({

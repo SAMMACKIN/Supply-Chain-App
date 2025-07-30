@@ -58,9 +58,10 @@ export function CallOffList({ onCreateCallOff, onViewCallOff, onEditCallOff }: C
   // Workflow mutations
   const confirmMutation = useMutation({
     mutationFn: confirmCallOff,
-    onSuccess: () => {
+    onSuccess: (data, callOffId) => {
       toast.success('Call-off confirmed successfully!')
       queryClient.invalidateQueries({ queryKey: ['call-offs'] })
+      queryClient.invalidateQueries({ queryKey: ['call-off', callOffId] })
     },
     onError: (error: Error) => {
       toast.error(error.message || 'Failed to confirm call-off')
@@ -69,9 +70,10 @@ export function CallOffList({ onCreateCallOff, onViewCallOff, onEditCallOff }: C
 
   const cancelMutation = useMutation({
     mutationFn: ({ id }: { id: string; reason?: string }) => cancelCallOff(id),
-    onSuccess: () => {
+    onSuccess: (data, variables) => {
       toast.success('Call-off cancelled successfully!')
       queryClient.invalidateQueries({ queryKey: ['call-offs'] })
+      queryClient.invalidateQueries({ queryKey: ['call-off', variables.id] })
     },
     onError: (error: Error) => {
       toast.error(error.message || 'Failed to cancel call-off')
@@ -80,9 +82,10 @@ export function CallOffList({ onCreateCallOff, onViewCallOff, onEditCallOff }: C
 
   const fulfillMutation = useMutation({
     mutationFn: fulfillCallOff,
-    onSuccess: () => {
+    onSuccess: (data, callOffId) => {
       toast.success('Call-off fulfilled successfully!')
       queryClient.invalidateQueries({ queryKey: ['call-offs'] })
+      queryClient.invalidateQueries({ queryKey: ['call-off', callOffId] })
     },
     onError: (error: Error) => {
       toast.error(error.message || 'Failed to fulfill call-off')
