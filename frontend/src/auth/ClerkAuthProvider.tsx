@@ -90,15 +90,15 @@ export function ClerkAuthProvider({ children }: ClerkAuthProviderProps) {
 
   // Auth methods - these will redirect to Clerk's hosted authentication
   const login = useCallback(async (_credentials: LoginCredentials) => {
-    // Clerk handles login through their hosted UI
-    // This method is kept for interface compatibility but will redirect to Clerk
-    window.location.href = '/sign-in'
+    // Clerk handles login through their UI components
+    // This method is kept for interface compatibility
+    // Navigation is handled by React Router
   }, [])
 
   const register = useCallback(async (_data: RegisterData) => {
-    // Clerk handles registration through their hosted UI
-    // This method is kept for interface compatibility but will redirect to Clerk
-    window.location.href = '/sign-up'
+    // Clerk handles registration through their UI components
+    // This method is kept for interface compatibility
+    // Navigation is handled by React Router
   }, [])
 
   const logout = useCallback(async () => {

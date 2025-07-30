@@ -1,6 +1,7 @@
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom'
 import { createTheme, ThemeProvider as MuiThemeProvider } from '@mui/material/styles'
 import CssBaseline from '@mui/material/CssBaseline'
+import { SignIn, SignUp } from '@clerk/clerk-react'
 import { ThemeProvider } from './contexts/ThemeContext'
 import { QueryProvider } from './providers/QueryProvider'
 import { ClerkProvider } from './providers/ClerkProvider'
@@ -44,8 +45,10 @@ function App() {
             <ClerkAuthProvider>
             <Routes>
               {/* Public routes */}
-              <Route path="/login" element={<LoginForm />} />
-              <Route path="/register" element={<RegisterForm />} />
+              <Route path="/sign-in/*" element={<SignIn routing="path" path="/sign-in" />} />
+              <Route path="/sign-up/*" element={<SignUp routing="path" path="/sign-up" />} />
+              <Route path="/login" element={<Navigate to="/sign-in" replace />} />
+              <Route path="/register" element={<Navigate to="/sign-up" replace />} />
               <Route path="/reset-password" element={<ResetPasswordForm />} />
               <Route path="/verify-email" element={<VerifyEmailPage />} />
               <Route path="/unauthorized" element={<UnauthorizedPage />} />
