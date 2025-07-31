@@ -58,10 +58,18 @@ export function CallOffList({ onCreateCallOff, onViewCallOff, onEditCallOff }: C
   // Workflow mutations
   const confirmMutation = useMutation({
     mutationFn: confirmCallOff,
-    onSuccess: (data, callOffId) => {
+    onSuccess: (updatedCallOff, callOffId) => {
       toast.success('Call-off confirmed successfully!')
+      // Update the cache immediately with the returned data
+      queryClient.setQueryData(['call-offs'], (oldData: CallOff[] | undefined) => {
+        if (!oldData) return oldData
+        return oldData.map(co => co.call_off_id === callOffId ? updatedCallOff : co)
+      })
+      // Also invalidate to ensure fresh data
       queryClient.invalidateQueries({ queryKey: ['call-offs'] })
       queryClient.invalidateQueries({ queryKey: ['call-off', callOffId] })
+      // Force refetch
+      refetch()
     },
     onError: (error: Error) => {
       toast.error(error.message || 'Failed to confirm call-off')
@@ -70,10 +78,18 @@ export function CallOffList({ onCreateCallOff, onViewCallOff, onEditCallOff }: C
 
   const cancelMutation = useMutation({
     mutationFn: ({ id }: { id: string; reason?: string }) => cancelCallOff(id),
-    onSuccess: (data, variables) => {
+    onSuccess: (updatedCallOff, variables) => {
       toast.success('Call-off cancelled successfully!')
+      // Update the cache immediately with the returned data
+      queryClient.setQueryData(['call-offs'], (oldData: CallOff[] | undefined) => {
+        if (!oldData) return oldData
+        return oldData.map(co => co.call_off_id === variables.id ? updatedCallOff : co)
+      })
+      // Also invalidate to ensure fresh data
       queryClient.invalidateQueries({ queryKey: ['call-offs'] })
       queryClient.invalidateQueries({ queryKey: ['call-off', variables.id] })
+      // Force refetch
+      refetch()
     },
     onError: (error: Error) => {
       toast.error(error.message || 'Failed to cancel call-off')
@@ -82,10 +98,18 @@ export function CallOffList({ onCreateCallOff, onViewCallOff, onEditCallOff }: C
 
   const fulfillMutation = useMutation({
     mutationFn: fulfillCallOff,
-    onSuccess: (data, callOffId) => {
+    onSuccess: (updatedCallOff, callOffId) => {
       toast.success('Call-off fulfilled successfully!')
+      // Update the cache immediately with the returned data
+      queryClient.setQueryData(['call-offs'], (oldData: CallOff[] | undefined) => {
+        if (!oldData) return oldData
+        return oldData.map(co => co.call_off_id === callOffId ? updatedCallOff : co)
+      })
+      // Also invalidate to ensure fresh data
       queryClient.invalidateQueries({ queryKey: ['call-offs'] })
       queryClient.invalidateQueries({ queryKey: ['call-off', callOffId] })
+      // Force refetch
+      refetch()
     },
     onError: (error: Error) => {
       toast.error(error.message || 'Failed to fulfill call-off')
