@@ -93,7 +93,7 @@ router.get('/locations', requireAuth, async (req, res) => {
 });
 
 // POST /api/inventory/locations - Create inventory location
-router.post('/locations', requireAuth, async (req, res) => {
+router.post('/locations', requireAuth, async (req, res): Promise<void> => {
   const data = createInventoryLocationSchema.parse(req.body);
   
   // Check if location code already exists
@@ -161,7 +161,7 @@ router.get('/lots', requireAuth, async (req, res) => {
 });
 
 // GET /api/inventory/lots/:id - Get single lot with bundles
-router.get('/lots/:id', requireAuth, async (req, res) => {
+router.get('/lots/:id', requireAuth, async (req, res): Promise<void> => {
   const { id } = req.params;
   
   const lot = await prisma.inventoryLot.findUnique({
@@ -208,7 +208,7 @@ router.get('/lots/:id', requireAuth, async (req, res) => {
 });
 
 // POST /api/inventory/lots - Create inventory lot with bundles
-router.post('/lots', requireAuth, async (req, res) => {
+router.post('/lots', requireAuth, async (req, res): Promise<void> => {
   const userId = req.auth?.userId || '00000000-0000-0000-0000-000000000000';
   const data = createInventoryLotSchema.parse(req.body);
   
@@ -350,7 +350,7 @@ router.get('/bundles', requireAuth, async (req, res) => {
 });
 
 // POST /api/inventory/adjustments - Create inventory adjustment
-router.post('/adjustments', requireAuth, async (req, res) => {
+router.post('/adjustments', requireAuth, async (req, res): Promise<void> => {
   const userId = req.auth?.userId || '00000000-0000-0000-0000-000000000000';
   const data = createInventoryAdjustmentSchema.parse(req.body);
   
@@ -369,7 +369,7 @@ router.post('/adjustments', requireAuth, async (req, res) => {
   const weightVariance = data.weight_after_kg - bundle.actual_weight_kg.toNumber();
   
   // Create adjustment and update bundle in transaction
-  const [adjustment, updatedBundle] = await prisma.$transaction([
+  const [adjustment] = await prisma.$transaction([
     // Create adjustment record
     prisma.inventoryAdjustment.create({
       data: {

@@ -103,7 +103,7 @@ router.get('/', requireAuth, async (req, res) => {
 });
 
 // GET /api/transport-orders/:id - Get single transport order
-router.get('/:id', requireAuth, async (req, res) => {
+router.get('/:id', requireAuth, async (req, res): Promise<void> => {
   const { id } = req.params;
   
   const transportOrder = await prisma.transportOrder.findUnique({
@@ -154,7 +154,7 @@ router.get('/:id', requireAuth, async (req, res) => {
 });
 
 // POST /api/transport-orders - Create new transport order
-router.post('/', requireAuth, async (req, res) => {
+router.post('/', requireAuth, async (req, res): Promise<void> => {
   const userId = req.auth?.userId || '00000000-0000-0000-0000-000000000000';
   const data = createTransportOrderSchema.parse(req.body);
   
@@ -190,9 +190,7 @@ router.post('/', requireAuth, async (req, res) => {
   const totalWeight = data.shipment_lines.reduce((sum, sl) => 
     sum + (sl.planned_weight_kg || 0), 0
   );
-  const totalBundles = data.shipment_lines.reduce((sum, sl) => 
-    sum + sl.planned_bundle_qty, 0
-  );
+  // Total bundles calculation removed - not used
   
   // Create transport order with all related data
   const transportOrder = await prisma.transportOrder.create({
@@ -265,7 +263,7 @@ router.post('/', requireAuth, async (req, res) => {
 });
 
 // PATCH /api/transport-orders/:id - Update transport order
-router.patch('/:id', requireAuth, async (req, res) => {
+router.patch('/:id', requireAuth, async (req, res): Promise<void> => {
   const { id } = req.params;
   const data = updateTransportOrderSchema.parse(req.body);
   
@@ -313,7 +311,7 @@ router.patch('/:id', requireAuth, async (req, res) => {
 });
 
 // DELETE /api/transport-orders/:id - Delete transport order
-router.delete('/:id', requireAuth, async (req, res) => {
+router.delete('/:id', requireAuth, async (req, res): Promise<void> => {
   const { id } = req.params;
   
   const existing = await prisma.transportOrder.findUnique({
