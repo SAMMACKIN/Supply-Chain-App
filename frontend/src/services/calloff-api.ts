@@ -379,13 +379,58 @@ export async function deleteShipmentLine(id: string) {
 
 // Call-off status update functions
 export async function confirmCallOff(id: string): Promise<CallOff> {
+  if (USE_API) {
+    try {
+      console.log('Confirming call-off:', id)
+      const result = await apiCall<CallOff>(`/call-offs/${id}/confirm`, {
+        method: 'POST',
+      })
+      console.log('Call-off confirmed successfully:', result)
+      return result
+    } catch (error) {
+      console.error('Failed to confirm call-off:', error)
+      throw error
+    }
+  }
+  
+  // Mock implementation
   return updateCallOff(id, { status: 'CONFIRMED' })
 }
 
 export async function cancelCallOff(id: string): Promise<CallOff> {
+  if (USE_API) {
+    try {
+      console.log('Cancelling call-off:', id)
+      const result = await apiCall<CallOff>(`/call-offs/${id}/cancel`, {
+        method: 'POST',
+      })
+      console.log('Call-off cancelled successfully:', result)
+      return result
+    } catch (error) {
+      console.error('Failed to cancel call-off:', error)
+      throw error
+    }
+  }
+  
+  // Mock implementation
   return updateCallOff(id, { status: 'CANCELLED' })
 }
 
 export async function fulfillCallOff(id: string): Promise<CallOff> {
+  if (USE_API) {
+    try {
+      console.log('Fulfilling call-off:', id)
+      const result = await apiCall<CallOff>(`/call-offs/${id}/fulfill`, {
+        method: 'POST',
+      })
+      console.log('Call-off fulfilled successfully:', result)
+      return result
+    } catch (error) {
+      console.error('Failed to fulfill call-off:', error)
+      throw error
+    }
+  }
+  
+  // Mock implementation
   return updateCallOff(id, { status: 'FULFILLED' })
 }
