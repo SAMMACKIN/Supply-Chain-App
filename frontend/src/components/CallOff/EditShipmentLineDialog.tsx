@@ -301,7 +301,16 @@ export function EditShipmentLineDialog({ shipmentLine, callOff, open, onClose }:
     // Only send changed fields
     const changeData: UpdateShipmentLineRequest = {}
     changes.forEach(change => {
-      (changeData as any)[change.field] = change.newValue
+      let value = change.newValue
+      // Format dates to ISO strings for API
+      if ((change.field === 'expected_ship_date' || change.field === 'requested_delivery_date') && value && value !== 'Not set') {
+        value = new Date(value).toISOString()
+      }
+      // Handle empty strings for optional fields
+      if (change.field === 'destination_party_id' && value === '') {
+        value = undefined
+      }
+      (changeData as any)[change.field] = value
     })
 
     if (Object.keys(changeData).length === 0) {
@@ -481,6 +490,7 @@ export function EditShipmentLineDialog({ shipmentLine, callOff, open, onClose }:
               <Box sx={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 3 }}>
                 <TextField
                   fullWidth
+                  required
                   type="number"
                   label="Bundle Quantity (tonnes)"
                   {...register('bundle_qty', { 
@@ -493,11 +503,12 @@ export function EditShipmentLineDialog({ shipmentLine, callOff, open, onClose }:
                   inputProps={{ min: 1, step: 0.1 }}
                 />
                 
-                <FormControl fullWidth error={!!getFieldError('metal_code')}>
-                  <InputLabel>Metal Code</InputLabel>
+                <FormControl fullWidth required error={!!getFieldError('metal_code') || !!errors.metal_code}>
+                  <InputLabel id="metal-code-edit-label">Metal Code *</InputLabel>
                   <Select
                     {...register('metal_code', { required: 'Metal code is required' })}
-                    label="Metal Code"
+                    labelId="metal-code-edit-label"
+                    label="Metal Code *"
                     defaultValue={shipmentLine.metal_code}
                   >
                     {VALID_METAL_CODES.map(code => (

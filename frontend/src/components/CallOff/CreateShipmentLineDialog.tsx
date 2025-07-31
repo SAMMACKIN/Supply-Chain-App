@@ -179,7 +179,15 @@ export function CreateShipmentLineDialog({ callOff, open, onClose }: CreateShipm
       toast.warning(`Warning: ${warningMessage}`)
     }
 
-    createMutation.mutate(data)
+    // Format dates to ISO strings for API
+    const formattedData = {
+      ...data,
+      expected_ship_date: data.expected_ship_date ? new Date(data.expected_ship_date).toISOString() : undefined,
+      requested_delivery_date: data.requested_delivery_date ? new Date(data.requested_delivery_date).toISOString() : undefined,
+      destination_party_id: data.destination_party_id || undefined
+    }
+
+    createMutation.mutate(formattedData)
   }
 
   const handleClose = () => {
@@ -338,9 +346,15 @@ export function CreateShipmentLineDialog({ callOff, open, onClose }: CreateShipm
 
         <form onSubmit={handleSubmit(onSubmit)} id="shipment-line-form">
           <Stack spacing={3}>
+            <Alert severity="info" sx={{ mb: 1 }}>
+              <Typography variant="body2">
+                <strong>Required fields:</strong> Bundle Quantity and Metal Code. All other fields are optional.
+              </Typography>
+            </Alert>
             <Box sx={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 3 }}>
               <TextField
                 fullWidth
+                required
                 type="number"
                 label="Bundle Quantity (tonnes)"
                 {...register('bundle_qty', { 
@@ -353,13 +367,24 @@ export function CreateShipmentLineDialog({ callOff, open, onClose }: CreateShipm
                 inputProps={{ min: 1, step: 0.1 }}
               />
               
-              <FormControl fullWidth error={!!getFieldError('metal_code')}>
-                <InputLabel>Metal Code</InputLabel>
+              <FormControl fullWidth required error={!!getFieldError('metal_code') || !!errors.metal_code}>
+                <InputLabel id="metal-code-label">Metal Code *</InputLabel>
                 <Select
                   {...register('metal_code', { required: 'Metal code is required' })}
-                  label="Metal Code"
+                  labelId="metal-code-label"
+                  label="Metal Code *"
                   defaultValue=""
+                  MenuProps={{
+                    PaperProps: {
+                      style: {
+                        maxHeight: 300,
+                      },
+                    },
+                  }}
                 >
+                  <MenuItem value="" disabled>
+                    <em>Select a metal code</em>
+                  </MenuItem>
                   {VALID_METAL_CODES.map(code => (
                     <MenuItem key={code} value={code}>
                       {code}
@@ -367,7 +392,7 @@ export function CreateShipmentLineDialog({ callOff, open, onClose }: CreateShipm
                   ))}
                 </Select>
                 <FormHelperText>
-                  {getFieldHelperText('metal_code', 'Metal type for this shipment')}
+                  {errors.metal_code?.message || getFieldHelperText('metal_code', 'Metal type for this shipment (Required)')}
                 </FormHelperText>
               </FormControl>
             </Box>
@@ -411,8 +436,8 @@ export function CreateShipmentLineDialog({ callOff, open, onClose }: CreateShipm
               label="Destination Party ID"
               {...register('destination_party_id')}
               error={!!getFieldError('destination_party_id')}
-              helperText={getFieldHelperText('destination_party_id', 'Customer or warehouse ID')}
-              placeholder="Customer or warehouse ID"
+              helperText={getFieldHelperText('destination_party_id', 'UUID of the destination party (leave empty if not available)')}
+              placeholder="e.g., 123e4567-e89b-12d3-a456-426614174000"
               inputProps={{ maxLength: 50 }}
             />
 
