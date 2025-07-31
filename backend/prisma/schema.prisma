@@ -72,6 +72,114 @@ enum AddressType {
   BOTH
 }
 
+// Transport Order Enums
+enum TransportMode {
+  TRUCK
+  RAIL
+  VESSEL
+  AIR
+  MULTIMODAL
+  
+  @@map("transport_mode_enum")
+}
+
+enum TransportOrderStatus {
+  DRAFT
+  BOOKED
+  IN_TRANSIT
+  DELIVERED
+  CANCELLED
+  EXCEPTION
+  
+  @@map("transport_order_status_enum")
+}
+
+enum TransportStopType {
+  PICKUP
+  DELIVERY
+  CROSS_DOCK
+  CUSTOMS
+  WEIGHBRIDGE
+  
+  @@map("transport_stop_type_enum")
+}
+
+enum TransportMilestoneType {
+  BOOKING_CONFIRMED
+  PICKUP_SCHEDULED
+  ARRIVED_AT_PICKUP
+  DEPARTED_PICKUP
+  IN_TRANSIT
+  ARRIVED_AT_DELIVERY
+  DELIVERED
+  POD_RECEIVED
+  EXCEPTION
+  CUSTOMS_CLEARED
+  EQUIPMENT_RETURNED
+  
+  @@map("transport_milestone_type_enum")
+}
+
+enum EquipmentType {
+  CONTAINER_20FT
+  CONTAINER_40FT
+  CONTAINER_40HC
+  FLATBED_TRAILER
+  ENCLOSED_TRAILER
+  RAIL_CAR
+  TANK_CONTAINER
+  BULK_VESSEL
+  
+  @@map("equipment_type_enum")
+}
+
+// Inventory Enums
+enum InventoryStatus {
+  AVAILABLE
+  RESERVED
+  IN_TRANSIT
+  QUARANTINE
+  DAMAGED
+  DISPOSED
+  
+  @@map("inventory_status_enum")
+}
+
+enum AdjustmentType {
+  WEIGHT_VARIANCE
+  DAMAGE
+  SPILLAGE
+  MOISTURE_LOSS
+  REPACKAGING
+  QUALITY_ADJUSTMENT
+  CORRECTION
+  
+  @@map("adjustment_type_enum")
+}
+
+enum DocumentType {
+  CERTIFICATE_OF_ANALYSIS
+  MILL_CERTIFICATE
+  WEIGHT_CERTIFICATE
+  QUALITY_CERTIFICATE
+  INSPECTION_REPORT
+  CUSTOMS_DOCUMENT
+  OTHER
+  
+  @@map("document_type_enum")
+}
+
+enum LocationType {
+  WAREHOUSE
+  ZONE
+  RACK
+  YARD
+  TRANSIT
+  CUSTOMER
+  
+  @@map("location_type_enum")
+}
+
 // Models
 model UserProfile {
   user_id        String   @id @db.Uuid
@@ -203,8 +311,352 @@ model ShipmentLine {
   
   // Relations
   call_off                CallOff            @relation(fields: [call_off_id], references: [call_off_id], onDelete: Cascade)
+  transport_order_lines   TransportOrderLine[]
   
   @@index([call_off_id])
   @@index([status])
   @@map("call_off_shipment_line")
+}
+
+// Transport Order Models
+model TransportOrder {
+  transport_order_id     String               @id @default(uuid()) @db.Uuid
+  order_number          String               @unique
+  carrier_id            String?              @db.Uuid
+  carrier_name          String
+  booking_reference     String?
+  mode_of_transport     TransportMode
+  equipment_type        EquipmentType?
+  equipment_number      String?
+  status                TransportOrderStatus @default(DRAFT)
+  total_weight_kg       Decimal?             @db.Decimal(10, 2)
+  total_volume_m3       Decimal?             @db.Decimal(10, 3)
+  dangerous_goods       Boolean              @default(false)
+  temperature_controlled Boolean              @default(false)
+  special_instructions  String?
+  estimated_cost        Decimal?             @db.Decimal(10, 2)
+  actual_cost           Decimal?             @db.Decimal(10, 2)
+  currency_code         String?              @db.Char(3)
+  created_by            String               @db.Uuid
+  created_at            DateTime             @default(now())
+  updated_at            DateTime             @updatedAt
+  
+  // Relations
+  stops                 TransportStop[]
+  milestones            TransportMilestone[]
+  order_lines           TransportOrderLine[]
+  documents             TransportDocument[]
+  
+  @@index([status])
+  @@index([carrier_id])
+  @@index([order_number])
+  @@index([booking_reference])
+  @@map("transport_order")
+}
+
+model TransportOrderLine {
+  transport_order_line_id String   @id @default(uuid()) @db.Uuid
+  transport_order_id      String   @db.Uuid
+  shipment_line_id        String   @db.Uuid
+  
+  // Planning fields
+  planned_bundle_qty      Int
+  planned_weight_kg       Decimal? @db.Decimal(10, 2)
+  
+  // Actual loading fields (populated at pickup)
+  actual_bundle_qty       Int?
+  actual_weight_kg        Decimal? @db.Decimal(10, 2)
+  loaded_at               DateTime?
+  loaded_by               String?  @db.Uuid
+  
+  // Additional fields
+  pallet_count            Int?
+  volume_m3               Decimal? @db.Decimal(10, 3)
+  notes                   String?
+  created_at              DateTime @default(now())
+  
+  // Relations
+  transport_order         TransportOrder @relation(fields: [transport_order_id], references: [transport_order_id], onDelete: Cascade)
+  shipment_line           ShipmentLine   @relation(fields: [shipment_line_id], references: [shipment_line_id])
+  bundle_allocations      TransportBundleAllocation[]
+  
+  @@unique([transport_order_id, shipment_line_id])
+  @@index([transport_order_id])
+  @@index([shipment_line_id])
+  @@map("transport_order_line")
+}
+
+model TransportBundleAllocation {
+  allocation_id           String   @id @default(uuid()) @db.Uuid
+  transport_order_line_id String   @db.Uuid
+  bundle_id               String   @db.Uuid
+  loaded_weight_kg        Decimal  @db.Decimal(10, 2)
+  loaded_at               DateTime @default(now())
+  unloaded_at             DateTime?
+  
+  // Relations
+  transport_order_line    TransportOrderLine @relation(fields: [transport_order_line_id], references: [transport_order_line_id], onDelete: Cascade)
+  bundle                  InventoryBundle    @relation(fields: [bundle_id], references: [bundle_id])
+  
+  @@unique([transport_order_line_id, bundle_id])
+  @@index([transport_order_line_id])
+  @@index([bundle_id])
+  @@map("transport_bundle_allocation")
+}
+
+model TransportStop {
+  transport_stop_id      String            @id @default(uuid()) @db.Uuid
+  transport_order_id     String            @db.Uuid
+  stop_sequence         Int
+  stop_type             TransportStopType
+  location_name         String
+  location_code         String?
+  address               String?
+  city                  String?
+  state_province        String?
+  postal_code           String?
+  country_code          String?           @db.Char(2)
+  contact_name          String?
+  contact_phone         String?
+  scheduled_arrival     DateTime?
+  scheduled_departure   DateTime?
+  actual_arrival        DateTime?
+  actual_departure      DateTime?
+  driver_name           String?
+  driver_phone          String?
+  notes                 String?
+  created_at            DateTime          @default(now())
+  updated_at            DateTime          @updatedAt
+  
+  // Relations
+  transport_order       TransportOrder    @relation(fields: [transport_order_id], references: [transport_order_id], onDelete: Cascade)
+  milestones            TransportMilestone[]
+  
+  @@unique([transport_order_id, stop_sequence])
+  @@index([transport_order_id])
+  @@index([stop_type])
+  @@map("transport_stop")
+}
+
+model TransportMilestone {
+  milestone_id          String                 @id @default(uuid()) @db.Uuid
+  transport_order_id    String                 @db.Uuid
+  transport_stop_id     String?                @db.Uuid
+  milestone_type        TransportMilestoneType
+  occurred_at           DateTime               @default(now())
+  description           String?
+  location_name         String?
+  latitude              Decimal?               @db.Decimal(10, 8)
+  longitude             Decimal?               @db.Decimal(11, 8)
+  reported_by           String?
+  exception_code        String?
+  exception_reason      String?
+  resolution_required   Boolean                @default(false)
+  resolved_at           DateTime?
+  resolved_by           String?                @db.Uuid
+  resolution_notes      String?
+  created_at            DateTime               @default(now())
+  
+  // Relations
+  transport_order       TransportOrder         @relation(fields: [transport_order_id], references: [transport_order_id], onDelete: Cascade)
+  transport_stop        TransportStop?         @relation(fields: [transport_stop_id], references: [transport_stop_id])
+  
+  @@index([transport_order_id])
+  @@index([transport_stop_id])
+  @@index([milestone_type])
+  @@index([occurred_at])
+  @@map("transport_milestone")
+}
+
+model TransportDocument {
+  document_id           String         @id @default(uuid()) @db.Uuid
+  transport_order_id    String         @db.Uuid
+  document_type         String         // e.g., 'BOL', 'POD', 'CMR', 'INVOICE'
+  document_number       String?
+  file_name             String
+  file_url              String?
+  file_size_bytes       Int?
+  mime_type             String?
+  uploaded_by           String         @db.Uuid
+  uploaded_at           DateTime       @default(now())
+  is_active             Boolean        @default(true)
+  
+  // Relations
+  transport_order       TransportOrder @relation(fields: [transport_order_id], references: [transport_order_id], onDelete: Cascade)
+  
+  @@index([transport_order_id])
+  @@index([document_type])
+  @@map("transport_document")
+}
+
+// Inventory Management Models
+model InventoryLocation {
+  location_id      String           @id @default(uuid()) @db.Uuid
+  location_code    String           @unique
+  location_name    String
+  location_type    LocationType
+  parent_location  String?          @db.Uuid
+  warehouse_code   String?
+  zone_code        String?
+  rack_position    String?
+  gps_coordinates  Json?            // {lat: number, lng: number}
+  capacity_tonnes  Decimal?         @db.Decimal(10, 3)
+  is_active        Boolean          @default(true)
+  temperature_controlled Boolean     @default(false)
+  security_level   String?
+  notes            String?
+  created_at       DateTime         @default(now())
+  updated_at       DateTime         @updatedAt
+  
+  // Relations
+  parent           InventoryLocation?  @relation("LocationHierarchy", fields: [parent_location], references: [location_id])
+  child_locations  InventoryLocation[] @relation("LocationHierarchy")
+  inventory_bundles InventoryBundle[]
+  
+  @@index([location_code])
+  @@index([warehouse_code])
+  @@index([parent_location])
+  @@map("inventory_locations")
+}
+
+model InventoryLot {
+  lot_id               String              @id @default(uuid()) @db.Uuid
+  lot_number           String              @unique
+  metal_code           String              @db.VarChar(12)
+  manufacturer_id      String?             @db.Uuid
+  manufacturer_lot_no  String?
+  production_date      DateTime?           @db.Date
+  receipt_date         DateTime            @db.Date
+  nominal_weight_t     Decimal             @default(25.000) @db.Decimal(10, 3)
+  actual_weight_t      Decimal             @db.Decimal(10, 3)
+  purity_percentage    Decimal?            @db.Decimal(5, 3)
+  chemical_composition Json?               // Detailed composition data
+  origin_country       String?             @db.Char(2)
+  customs_cleared      Boolean             @default(false)
+  quarantine_status    Boolean             @default(false)
+  quarantine_reason    String?
+  created_at           DateTime            @default(now())
+  updated_at           DateTime            @updatedAt
+  
+  // Relations
+  bundles              InventoryBundle[]
+  certificates         InventoryCertificate[]
+  
+  @@index([lot_number])
+  @@index([metal_code])
+  @@index([manufacturer_id])
+  @@index([receipt_date])
+  @@map("inventory_lots")
+}
+
+model InventoryBundle {
+  bundle_id            String              @id @default(uuid()) @db.Uuid
+  bundle_number        String              @unique
+  lot_id               String              @db.Uuid
+  sequence_in_lot      Int                 // 1-25 for position in lot
+  metal_code           String              @db.VarChar(12)
+  nominal_weight_kg    Decimal             @default(1000.000) @db.Decimal(10, 3)
+  actual_weight_kg     Decimal             @db.Decimal(10, 3)
+  tare_weight_kg       Decimal?            @db.Decimal(10, 3)
+  net_weight_kg        Decimal?            @db.Decimal(10, 3)
+  location_id          String              @db.Uuid
+  status               InventoryStatus     @default(AVAILABLE)
+  reserved_for         String?             @db.Uuid // call_off_id or shipment_line_id
+  reservation_date     DateTime?
+  last_movement_date   DateTime?
+  seal_number          String?
+  container_number     String?
+  notes                String?
+  created_at           DateTime            @default(now())
+  updated_at           DateTime            @updatedAt
+  
+  // Relations
+  lot                  InventoryLot        @relation(fields: [lot_id], references: [lot_id])
+  location             InventoryLocation   @relation(fields: [location_id], references: [location_id])
+  adjustments          InventoryAdjustment[]
+  movements            InventoryMovement[]
+  transport_allocations TransportBundleAllocation[]
+  
+  @@unique([lot_id, sequence_in_lot])
+  @@index([bundle_number])
+  @@index([lot_id])
+  @@index([location_id])
+  @@index([status])
+  @@index([metal_code])
+  @@map("inventory_bundles")
+}
+
+model InventoryAdjustment {
+  adjustment_id        String          @id @default(uuid()) @db.Uuid
+  bundle_id            String          @db.Uuid
+  adjustment_type      AdjustmentType
+  adjustment_date      DateTime        @default(now())
+  weight_before_kg     Decimal         @db.Decimal(10, 3)
+  weight_after_kg      Decimal         @db.Decimal(10, 3)
+  weight_variance_kg   Decimal         @db.Decimal(10, 3)
+  reason               String
+  reference_document   String?
+  approved_by          String?         @db.Uuid
+  notes                String?
+  created_by           String          @db.Uuid
+  created_at           DateTime        @default(now())
+  
+  // Relations
+  bundle               InventoryBundle @relation(fields: [bundle_id], references: [bundle_id])
+  
+  @@index([bundle_id])
+  @@index([adjustment_date])
+  @@index([adjustment_type])
+  @@map("inventory_adjustments")
+}
+
+model InventoryMovement {
+  movement_id          String              @id @default(uuid()) @db.Uuid
+  bundle_id            String              @db.Uuid
+  movement_type        String              // 'RECEIPT', 'TRANSFER', 'SHIPMENT', 'ADJUSTMENT'
+  from_location_id     String?             @db.Uuid
+  to_location_id       String?             @db.Uuid
+  movement_date        DateTime            @default(now())
+  reference_type       String?             // 'SHIPMENT_LINE', 'TRANSFER_ORDER', etc.
+  reference_id         String?             @db.Uuid
+  performed_by         String              @db.Uuid
+  notes                String?
+  created_at           DateTime            @default(now())
+  
+  // Relations
+  bundle               InventoryBundle     @relation(fields: [bundle_id], references: [bundle_id])
+  
+  @@index([bundle_id])
+  @@index([movement_date])
+  @@index([reference_type, reference_id])
+  @@map("inventory_movements")
+}
+
+model InventoryCertificate {
+  certificate_id       String          @id @default(uuid()) @db.Uuid
+  document_type        DocumentType
+  document_number      String
+  lot_id               String?         @db.Uuid
+  bundle_id            String?         @db.Uuid
+  issuer_name          String
+  issue_date           DateTime        @db.Date
+  expiry_date          DateTime?       @db.Date
+  file_path            String?         // Path to stored document
+  file_hash            String?         // SHA256 hash for integrity
+  certificate_data     Json?           // Structured certificate data
+  verified             Boolean         @default(false)
+  verified_by          String?         @db.Uuid
+  verified_date        DateTime?
+  notes                String?
+  created_at           DateTime        @default(now())
+  updated_at           DateTime        @updatedAt
+  
+  // Relations
+  lot                  InventoryLot?   @relation(fields: [lot_id], references: [lot_id])
+  
+  @@index([document_number])
+  @@index([lot_id])
+  @@index([bundle_id])
+  @@index([document_type])
+  @@map("inventory_certificates")
 }

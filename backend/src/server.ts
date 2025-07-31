@@ -22,6 +22,8 @@ import authRoutes from './api/routes/auth';
 import diagnosticRoutes from './api/routes/diagnostic';
 import counterpartyRoutes from './api/routes/counterparties';
 import webhookRoutes from './api/routes/webhooks';
+import transportOrderRoutes from './api/routes/transport-orders';
+import inventoryRoutes from './api/routes/inventory';
 
 const app = express();
 const PORT = parseInt(process.env.PORT || '3001', 10);
@@ -98,6 +100,8 @@ app.use('/api/quotas', quotaRoutes);
 app.use('/api/call-offs', callOffRoutes);
 app.use('/api/shipment-lines', shipmentLineRoutes);
 app.use('/api/counterparties', counterpartyRoutes);
+app.use('/api/transport-orders', transportOrderRoutes);
+app.use('/api/inventory', inventoryRoutes);
 app.use('/api/diagnostic', diagnosticRoutes);
 app.use('/api/webhooks', webhookRoutes);
 
