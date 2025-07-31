@@ -63,10 +63,6 @@ export function CreateCallOffFormMUI({
     staleTime: 5 * 60 * 1000, // 5 minutes
   })
 
-  // Debug logging
-  console.log('Quotas loading:', quotasLoading)
-  console.log('Quotas data:', quotas)
-  console.log('Quotas error:', quotasError)
 
   // Query quota balance when quota is selected
   const { data: quotaBalance, isLoading: balanceLoading } = useQuery({

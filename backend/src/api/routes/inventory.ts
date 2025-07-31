@@ -93,7 +93,7 @@ router.get('/locations', requireAuth, async (req, res) => {
 });
 
 // POST /api/inventory/locations - Create inventory location
-router.post('/locations', requireAuth, async (req, res): Promise<void> => {
+router.post('/locations', requireAuth, async (req, res) => {
   const data = createInventoryLocationSchema.parse(req.body);
   
   // Check if location code already exists
@@ -112,7 +112,7 @@ router.post('/locations', requireAuth, async (req, res): Promise<void> => {
     data,
   });
   
-  res.status(201).json({
+  return res.status(201).json({
     success: true,
     data: location,
   });
@@ -161,7 +161,7 @@ router.get('/lots', requireAuth, async (req, res) => {
 });
 
 // GET /api/inventory/lots/:id - Get single lot with bundles
-router.get('/lots/:id', requireAuth, async (req, res): Promise<void> => {
+router.get('/lots/:id', requireAuth, async (req, res) => {
   const { id } = req.params;
   
   const lot = await prisma.inventoryLot.findUnique({
@@ -201,14 +201,14 @@ router.get('/lots/:id', requireAuth, async (req, res): Promise<void> => {
     });
   }
   
-  res.json({
+  return res.json({
     success: true,
     data: lot,
   });
 });
 
 // POST /api/inventory/lots - Create inventory lot with bundles
-router.post('/lots', requireAuth, async (req, res): Promise<void> => {
+router.post('/lots', requireAuth, async (req, res) => {
   const userId = req.auth?.userId || '00000000-0000-0000-0000-000000000000';
   const data = createInventoryLotSchema.parse(req.body);
   
@@ -290,7 +290,7 @@ router.post('/lots', requireAuth, async (req, res): Promise<void> => {
     }
   });
   
-  res.status(201).json({
+  return res.status(201).json({
     success: true,
     data: lot,
   });
@@ -350,7 +350,7 @@ router.get('/bundles', requireAuth, async (req, res) => {
 });
 
 // POST /api/inventory/adjustments - Create inventory adjustment
-router.post('/adjustments', requireAuth, async (req, res): Promise<void> => {
+router.post('/adjustments', requireAuth, async (req, res) => {
   const userId = req.auth?.userId || '00000000-0000-0000-0000-000000000000';
   const data = createInventoryAdjustmentSchema.parse(req.body);
   
@@ -408,7 +408,7 @@ router.post('/adjustments', requireAuth, async (req, res): Promise<void> => {
     })
   ]);
   
-  res.status(201).json({
+  return res.status(201).json({
     success: true,
     data: adjustment,
   });

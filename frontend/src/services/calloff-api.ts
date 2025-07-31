@@ -244,12 +244,10 @@ export async function fetchCallOff(id: string): Promise<CallOff> {
 export async function createCallOff(data: CreateCallOffRequest): Promise<CallOff> {
   if (USE_API) {
     try {
-      console.log('Creating call-off with data:', data)
       const result = await apiCall<CallOff>('/call-offs', {
         method: 'POST',
         body: JSON.stringify(data),
       })
-      console.log('Call-off created successfully:', result)
       return result
     } catch (error) {
       console.error('Failed to create call-off:', error)
@@ -283,12 +281,10 @@ export async function createCallOff(data: CreateCallOffRequest): Promise<CallOff
 export async function updateCallOff(id: string, updates: Partial<CallOff>): Promise<CallOff> {
   if (USE_API) {
     try {
-      console.log('Updating call-off', id, 'with data:', updates)
       const result = await apiCall<CallOff>(`/call-offs/${id}`, {
         method: 'PATCH',
         body: JSON.stringify(updates),
       })
-      console.log('Call-off updated successfully:', result)
       return result
     } catch (error) {
       console.error('Failed to update call-off:', error)
@@ -336,13 +332,11 @@ export async function fetchShipmentLines(callOffId: string) {
 
 export async function createShipmentLine(callOffId: string, data: any) {
   if (USE_API) {
-    console.log('Creating shipment line with data:', data)
     try {
       const result = await apiCall(`/call-offs/${callOffId}/shipment-lines`, {
         method: 'POST',
         body: JSON.stringify(data),
       })
-      console.log('Shipment line created successfully:', result)
       return result
     } catch (error: any) {
       console.error('Failed to create shipment line:', error)
@@ -393,11 +387,9 @@ export async function deleteShipmentLine(id: string) {
 export async function confirmCallOff(id: string): Promise<CallOff> {
   if (USE_API) {
     try {
-      console.log('Confirming call-off:', id)
       const result = await apiCall<CallOff>(`/call-offs/${id}/confirm`, {
         method: 'POST',
       })
-      console.log('Call-off confirmed successfully:', result)
       return result
     } catch (error) {
       console.error('Failed to confirm call-off:', error)
@@ -412,11 +404,9 @@ export async function confirmCallOff(id: string): Promise<CallOff> {
 export async function cancelCallOff(id: string): Promise<CallOff> {
   if (USE_API) {
     try {
-      console.log('Cancelling call-off:', id)
       const result = await apiCall<CallOff>(`/call-offs/${id}/cancel`, {
         method: 'POST',
       })
-      console.log('Call-off cancelled successfully:', result)
       return result
     } catch (error) {
       console.error('Failed to cancel call-off:', error)
@@ -431,11 +421,9 @@ export async function cancelCallOff(id: string): Promise<CallOff> {
 export async function fulfillCallOff(id: string): Promise<CallOff> {
   if (USE_API) {
     try {
-      console.log('Fulfilling call-off:', id)
       const result = await apiCall<CallOff>(`/call-offs/${id}/fulfill`, {
         method: 'POST',
       })
-      console.log('Call-off fulfilled successfully:', result)
       return result
     } catch (error) {
       console.error('Failed to fulfill call-off:', error)

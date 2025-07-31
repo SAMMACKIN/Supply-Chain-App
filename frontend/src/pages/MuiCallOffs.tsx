@@ -56,7 +56,6 @@ export function MuiCallOffs() {
 
   const handleViewCallOff = (callOff: CallOff) => {
     try {
-      console.log('Opening call-off detail view for:', callOff.call_off_number)
       setSelectedCallOff(callOff)
       setShowDetailView(true)
     } catch (error) {
@@ -66,7 +65,6 @@ export function MuiCallOffs() {
 
   const handleEditCallOff = (callOff: CallOff) => {
     try {
-      console.log('Opening call-off edit dialog for:', callOff.call_off_number)
       setSelectedCallOff(callOff)
       setShowEditDialog(true)
     } catch (error) {
@@ -101,7 +99,6 @@ export function MuiCallOffs() {
           startIcon={<AddIcon />}
           onClick={() => {
             try {
-              console.log('Opening create call-off wizard')
               setShowCreateWizard(true)
             } catch (error) {
               console.error('Error opening create wizard:', error)

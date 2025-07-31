@@ -43,7 +43,6 @@ export function LoginForm() {
   // Redirect if already logged in
   useEffect(() => {
     if (user && !loading) {
-      console.log('User already logged in, redirecting to:', from)
       navigate(from, { replace: true })
     }
   }, [user, loading, navigate, from])
@@ -62,7 +61,6 @@ export function LoginForm() {
     
     try {
       await login(data)
-      console.log('Login successful, navigating to:', from)
       // Add a small delay to ensure auth state is fully updated
       setTimeout(() => {
         navigate(from, { replace: true })

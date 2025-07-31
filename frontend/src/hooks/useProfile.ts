@@ -31,7 +31,6 @@ export function useProfile() {
   
   const refreshProfile = useCallback(async () => {
     // In mock mode, profile is already in memory
-    console.log('Profile refresh requested - using cached data')
   }, [])
   
   return {

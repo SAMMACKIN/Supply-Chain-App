@@ -110,7 +110,6 @@ export function MockAuthProvider({ children }: MockAuthProviderProps) {
     setError(null)
     await new Promise(resolve => setTimeout(resolve, 1000))
     
-    console.log(`Mock: Password reset email sent to ${email}`)
   }, [])
 
   const updateProfile = useCallback(async (updates: Partial<UserProfile>) => {

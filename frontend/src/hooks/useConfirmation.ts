@@ -150,7 +150,6 @@ function MyComponent() {
     const confirmed = await confirmDelete('Important Document')
     if (confirmed) {
       // Perform delete action
-      console.log('Delete confirmed')
     }
   }
 
@@ -165,7 +164,6 @@ function MyComponent() {
     
     if (confirmed) {
       // Perform action
-      console.log('Custom action confirmed')
     }
   }
 

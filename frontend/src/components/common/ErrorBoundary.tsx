@@ -91,7 +91,6 @@ export class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundarySt
         url: window.location.href
       }
       
-      console.log('Error report:', errorReport)
       
       // Example: Send to error reporting service
       // fetch('/api/error-report', {

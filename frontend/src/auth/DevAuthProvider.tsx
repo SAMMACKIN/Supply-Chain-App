@@ -52,7 +52,6 @@ export function AuthProvider({ children }: AuthProviderProps) {
       // Store in localStorage for persistence
       localStorage.setItem('dev-auth-user', JSON.stringify(mockUser))
       
-      console.log('🔓 Dev mode: Logged in as mock user')
     } else {
       setError('Please enter email and password')
       setLoading(false)
@@ -69,7 +68,6 @@ export function AuthProvider({ children }: AuthProviderProps) {
   const logout = useCallback(async () => {
     setUser(null)
     localStorage.removeItem('dev-auth-user')
-    console.log('🔓 Dev mode: Logged out')
   }, [])
 
   // Mock update profile
@@ -89,7 +87,6 @@ export function AuthProvider({ children }: AuthProviderProps) {
     const savedUser = localStorage.getItem('dev-auth-user')
     if (savedUser) {
       setUser(JSON.parse(savedUser))
-      console.log('🔓 Dev mode: Restored mock user session')
     }
   }, [])
 

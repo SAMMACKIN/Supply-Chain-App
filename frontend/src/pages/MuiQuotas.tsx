@@ -329,7 +329,7 @@ export function MuiQuotas() {
                         <Tooltip title="View Quota Details">
                           <IconButton
                             size="small"
-                            onClick={() => console.log('View quota:', quota.quota_id)}
+                            onClick={() => {}}
                           >
                             <ViewIcon fontSize="small" />
                           </IconButton>

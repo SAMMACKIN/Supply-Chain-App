@@ -46,7 +46,6 @@ export function AuthProvider({ children }: AuthProviderProps) {
   }, [])
 
   const handleSession = useCallback((sessionData: any) => {
-    console.log('handleSession called with:', sessionData)
     // For dev mode, we ignore session data
   }, [])
 
@@ -62,7 +61,6 @@ export function AuthProvider({ children }: AuthProviderProps) {
       if (credentials.email && credentials.password) {
         setUser(devUser)
         localStorage.setItem('dev-auth', 'true')
-        console.log('Dev mode: Logged in successfully')
       } else {
         throw new Error('Please enter email and password')
       }
@@ -83,7 +81,6 @@ export function AuthProvider({ children }: AuthProviderProps) {
   const logout = useCallback(async () => {
     setUser(null)
     localStorage.removeItem('dev-auth')
-    console.log('Dev mode: Logged out')
   }, [])
 
   const updateProfile = useCallback(async (updates: Partial<UserProfile>) => {

@@ -8,7 +8,6 @@ export function useQuotas(filters?: {
   return useQuery({
     queryKey: ['quotas', filters],
     queryFn: async () => {
-      console.log('Fetching quotas from Railway API')
       const response = await api.quotas.list(filters)
       return response.data
     },

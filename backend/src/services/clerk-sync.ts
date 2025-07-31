@@ -108,7 +108,6 @@ export class ClerkSyncService {
         case 'user.deleted':
           // Soft delete - we don't actually delete user profiles to preserve audit trail
           // Instead, we could mark them as inactive if we add an is_active field
-          console.log(`User deleted in Clerk: ${userId}`);
           // For now, we don't delete the profile to preserve call-off history
           return null;
 

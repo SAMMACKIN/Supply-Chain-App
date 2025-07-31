@@ -202,7 +202,6 @@ export function CreateShipmentLineDialog({ callOff, open, onClose }: CreateShipm
       formattedData.notes = data.notes.trim()
     }
     
-    console.log('Formatted data for API:', formattedData)
 
     createMutation.mutate(formattedData)
   }

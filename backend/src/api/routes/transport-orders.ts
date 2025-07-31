@@ -95,7 +95,7 @@ router.get('/', requireAuth, async (req, res) => {
     orderBy: { created_at: 'desc' },
   });
   
-  res.json({
+  return res.json({
     success: true,
     data: transportOrders,
     count: transportOrders.length,
@@ -103,7 +103,7 @@ router.get('/', requireAuth, async (req, res) => {
 });
 
 // GET /api/transport-orders/:id - Get single transport order
-router.get('/:id', requireAuth, async (req, res): Promise<void> => {
+router.get('/:id', requireAuth, async (req, res) => {
   const { id } = req.params;
   
   const transportOrder = await prisma.transportOrder.findUnique({
@@ -147,14 +147,14 @@ router.get('/:id', requireAuth, async (req, res): Promise<void> => {
     });
   }
   
-  res.json({
+  return res.json({
     success: true,
     data: transportOrder,
   });
 });
 
 // POST /api/transport-orders - Create new transport order
-router.post('/', requireAuth, async (req, res): Promise<void> => {
+router.post('/', requireAuth, async (req, res) => {
   const userId = req.auth?.userId || '00000000-0000-0000-0000-000000000000';
   const data = createTransportOrderSchema.parse(req.body);
   
@@ -256,14 +256,14 @@ router.post('/', requireAuth, async (req, res): Promise<void> => {
     }
   });
   
-  res.status(201).json({
+  return res.status(201).json({
     success: true,
     data: transportOrder,
   });
 });
 
 // PATCH /api/transport-orders/:id - Update transport order
-router.patch('/:id', requireAuth, async (req, res): Promise<void> => {
+router.patch('/:id', requireAuth, async (req, res) => {
   const { id } = req.params;
   const data = updateTransportOrderSchema.parse(req.body);
   
@@ -304,14 +304,14 @@ router.patch('/:id', requireAuth, async (req, res): Promise<void> => {
     }
   });
   
-  res.json({
+  return res.json({
     success: true,
     data: transportOrder,
   });
 });
 
 // DELETE /api/transport-orders/:id - Delete transport order
-router.delete('/:id', requireAuth, async (req, res): Promise<void> => {
+router.delete('/:id', requireAuth, async (req, res) => {
   const { id } = req.params;
   
   const existing = await prisma.transportOrder.findUnique({
@@ -353,7 +353,7 @@ router.delete('/:id', requireAuth, async (req, res): Promise<void> => {
     where: { transport_order_id: id },
   });
   
-  res.json({
+  return res.json({
     success: true,
     message: 'Transport order deleted successfully',
   });
@@ -385,7 +385,7 @@ router.post('/:id/book', requireAuth, async (req, res) => {
     }
   });
   
-  res.json({
+  return res.json({
     success: true,
     data: transportOrder,
   });
