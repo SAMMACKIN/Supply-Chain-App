@@ -307,8 +307,12 @@ export function EditShipmentLineDialog({ shipmentLine, callOff, open, onClose }:
         value = new Date(value).toISOString()
       }
       // Handle empty strings for optional fields
-      if (change.field === 'destination_party_id' && value === '') {
+      if (change.field === 'destination_party_id' && (value === '' || value === 'Not set')) {
         value = undefined
+      }
+      // Ensure bundle_qty is an integer
+      if (change.field === 'bundle_qty' && typeof value === 'number') {
+        value = Math.floor(value)
       }
       (changeData as any)[change.field] = value
     })
@@ -500,7 +504,7 @@ export function EditShipmentLineDialog({ shipmentLine, callOff, open, onClose }:
                   })}
                   error={!!getFieldError('bundle_qty') || !!errors.bundle_qty}
                   helperText={getFieldHelperText('bundle_qty', 'Shipment quantity in tonnes')}
-                  inputProps={{ min: 1, step: 0.1 }}
+                  inputProps={{ min: 1, step: 1 }}
                 />
                 
                 <FormControl fullWidth required error={!!getFieldError('metal_code') || !!errors.metal_code}>

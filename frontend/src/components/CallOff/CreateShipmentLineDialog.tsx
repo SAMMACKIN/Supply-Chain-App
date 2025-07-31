@@ -179,12 +179,15 @@ export function CreateShipmentLineDialog({ callOff, open, onClose }: CreateShipm
       toast.warning(`Warning: ${warningMessage}`)
     }
 
-    // Format dates to ISO strings for API
+    // Format dates to ISO strings for API and ensure correct data types
     const formattedData = {
       ...data,
+      bundle_qty: Math.floor(data.bundle_qty), // Ensure integer
       expected_ship_date: data.expected_ship_date ? new Date(data.expected_ship_date).toISOString() : undefined,
       requested_delivery_date: data.requested_delivery_date ? new Date(data.requested_delivery_date).toISOString() : undefined,
-      destination_party_id: data.destination_party_id || undefined
+      destination_party_id: data.destination_party_id && data.destination_party_id.trim() !== '' ? data.destination_party_id : undefined,
+      delivery_location: data.delivery_location && data.delivery_location.trim() !== '' ? data.delivery_location : undefined,
+      notes: data.notes && data.notes.trim() !== '' ? data.notes : undefined
     }
 
     createMutation.mutate(formattedData)
@@ -364,7 +367,7 @@ export function CreateShipmentLineDialog({ callOff, open, onClose }: CreateShipm
                 })}
                 error={!!getFieldError('bundle_qty') || !!errors.bundle_qty}
                 helperText={getFieldHelperText('bundle_qty', 'Amount to allocate to this shipment')}
-                inputProps={{ min: 1, step: 0.1 }}
+                inputProps={{ min: 1, step: 1 }}
               />
               
               <FormControl fullWidth required error={!!getFieldError('metal_code') || !!errors.metal_code}>
@@ -436,8 +439,8 @@ export function CreateShipmentLineDialog({ callOff, open, onClose }: CreateShipm
               label="Destination Party ID"
               {...register('destination_party_id')}
               error={!!getFieldError('destination_party_id')}
-              helperText={getFieldHelperText('destination_party_id', 'UUID of the destination party (leave empty if not available)')}
-              placeholder="e.g., 123e4567-e89b-12d3-a456-426614174000"
+              helperText={getFieldHelperText('destination_party_id', 'Destination party identifier (optional)')}
+              placeholder="Leave empty if not applicable"
               inputProps={{ maxLength: 50 }}
             />
 
