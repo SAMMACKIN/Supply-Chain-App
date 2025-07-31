@@ -336,10 +336,22 @@ export async function fetchShipmentLines(callOffId: string) {
 
 export async function createShipmentLine(callOffId: string, data: any) {
   if (USE_API) {
-    return await apiCall(`/call-offs/${callOffId}/shipment-lines`, {
-      method: 'POST',
-      body: JSON.stringify(data),
-    })
+    console.log('Creating shipment line with data:', data)
+    try {
+      const result = await apiCall(`/call-offs/${callOffId}/shipment-lines`, {
+        method: 'POST',
+        body: JSON.stringify(data),
+      })
+      console.log('Shipment line created successfully:', result)
+      return result
+    } catch (error: any) {
+      console.error('Failed to create shipment line:', error)
+      console.error('Request data was:', data)
+      if (error.details) {
+        console.error('Validation details:', error.details)
+      }
+      throw error
+    }
   }
   
   return {

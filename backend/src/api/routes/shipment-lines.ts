@@ -43,7 +43,21 @@ router.get('/', requireAuth, async (req, res) => {
 
 router.post('/', requireAuth, async (req, res): Promise<void> => {
   const { callOffId } = req.params;
-  const data = createShipmentLineSchema.parse(req.body);
+  
+  // Add validation error handling
+  let data;
+  try {
+    data = createShipmentLineSchema.parse(req.body);
+  } catch (error: any) {
+    console.error('Validation error:', error);
+    console.error('Request body:', req.body);
+    res.status(400).json({
+      success: false,
+      error: 'Validation failed',
+      details: error.errors || error,
+    });
+    return;
+  }
   
   const callOff = await prisma.callOff.findUnique({
     where: { call_off_id: callOffId },

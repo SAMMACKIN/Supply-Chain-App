@@ -180,15 +180,29 @@ export function CreateShipmentLineDialog({ callOff, open, onClose }: CreateShipm
     }
 
     // Format dates to ISO strings for API and ensure correct data types
-    const formattedData = {
-      ...data,
+    const formattedData: any = {
       bundle_qty: Math.floor(data.bundle_qty), // Ensure integer
-      expected_ship_date: data.expected_ship_date ? new Date(data.expected_ship_date).toISOString() : undefined,
-      requested_delivery_date: data.requested_delivery_date ? new Date(data.requested_delivery_date).toISOString() : undefined,
-      destination_party_id: data.destination_party_id && data.destination_party_id.trim() !== '' ? data.destination_party_id : undefined,
-      delivery_location: data.delivery_location && data.delivery_location.trim() !== '' ? data.delivery_location : undefined,
-      notes: data.notes && data.notes.trim() !== '' ? data.notes : undefined
+      metal_code: data.metal_code, // Required field
     }
+    
+    // Only add optional fields if they have values
+    if (data.expected_ship_date) {
+      formattedData.expected_ship_date = new Date(data.expected_ship_date).toISOString()
+    }
+    if (data.requested_delivery_date) {
+      formattedData.requested_delivery_date = new Date(data.requested_delivery_date).toISOString()
+    }
+    if (data.destination_party_id && data.destination_party_id.trim() !== '') {
+      formattedData.destination_party_id = data.destination_party_id.trim()
+    }
+    if (data.delivery_location && data.delivery_location.trim() !== '') {
+      formattedData.delivery_location = data.delivery_location.trim()
+    }
+    if (data.notes && data.notes.trim() !== '') {
+      formattedData.notes = data.notes.trim()
+    }
+    
+    console.log('Formatted data for API:', formattedData)
 
     createMutation.mutate(formattedData)
   }
